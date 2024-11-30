@@ -1,3 +1,7 @@
+build/
+.vscode/
+.tmp_versions/
+
 # Prerequisites
 *.d
 
