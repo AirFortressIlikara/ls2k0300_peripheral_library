@@ -2,13 +2,15 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 08:14:34
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-11-30 12:10:50
- * @FilePath: /ko_dev/lib/pwm_gtim.h
- * @Description: 基于LS2K0300 GTIMER的PWM控制器
+ * @LastEditTime: 2024-12-01 04:43:46
+ * @FilePath: /ls2k0300_peripheral_library/lib/pwm_gtim.h
+ * @Description: 基于LS2K0300 GTIMER的PWM控制器类
+ *
+ * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
  */
 
-#ifndef _PWM_GTIM_H_
-#define _PWM_GTIM_H_
+#ifndef PWM_GTIM_H_
+#define PWM_GTIM_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +23,10 @@
 #include <errno.h>
 #include <string.h>
 
+#include "register.h"
+
 #define GPIO_MUX_BASE_ADDR 0x16000490
+
 #define GTIM_BASE_ADDR 0x16119000
 #define GTIM_CR1_OFFSET 0x00
 #define GTIM_CR2_OFFSET 0x04
@@ -48,7 +53,6 @@
 
 class PWM_GTIM
 {
-
 public:
     PWM_GTIM(int gpio, int mux, int chNum_, int period_, int duty_cycle_);
     ~PWM_GTIM(void);
@@ -61,7 +65,6 @@ public:
 
 private:
     uint32_t chNum;
-    void *map_register(uint32_t physical_address, size_t size);
     void PWM_Init(void);
     void reset_counter(void);
     void *ccmr_buffer[2];
