@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-10-10 15:02:00
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 04:43:08
+ * @LastEditTime: 2024-12-01 05:17:26
  * @FilePath: /ls2k0300_peripheral_library/lib/GPIO.h
  * @Description: GPIO类
  *
@@ -24,7 +24,7 @@
 class GPIO
 {
 public:
-    GPIO(int gpioNum);
+    GPIO(int gpioNum_);
     ~GPIO(void);
 
     bool setDirection(const std::string &direction);

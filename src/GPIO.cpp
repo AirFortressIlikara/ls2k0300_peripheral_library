@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-10-10 15:02:10
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 04:43:10
+ * @LastEditTime: 2024-12-01 05:16:31
  * @FilePath: /ls2k0300_peripheral_library/src/GPIO.cpp
  * @Description: GPIO类
  *
@@ -11,7 +11,7 @@
 #include "GPIO.h"
 
 // gpioNum为使用的GPIO编号
-GPIO::GPIO(int gpioNum) : gpioNum(gpioNum), fd(-1)
+GPIO::GPIO(int gpioNum_) : gpioNum(gpioNum_), fd(-1)
 {
     gpioPath = "/sys/class/gpio/gpio" + std::to_string(gpioNum);
 
@@ -32,10 +32,7 @@ GPIO::GPIO(int gpioNum) : gpioNum(gpioNum), fd(-1)
 // 析构函数
 GPIO::~GPIO(void)
 {
-    if (fd != -1)
-    {
-        close(fd); // 关闭文件描述符
-    }
+    close(fd); // 关闭文件描述符
 }
 
 // 设置GPIO方向，out为输出，in为输入
@@ -52,12 +49,6 @@ bool GPIO::setEdge(const std::string &edge)
 // 设置 GPIO 输出值
 bool GPIO::setValue(bool value)
 {
-    if (fd == -1)
-    {
-        std::cerr << "GPIO file descriptor is invalid" << std::endl;
-        return false;
-    }
-
     // 使用文件描述符写入 GPIO 值 ('1' 或 '0')
     const char *val_str = value ? "1" : "0";
     if (write(fd, val_str, 1) != 1)
@@ -71,12 +62,6 @@ bool GPIO::setValue(bool value)
 // 读取 GPIO 输入值
 bool GPIO::readValue(void)
 {
-    if (fd == -1)
-    {
-        std::cerr << "GPIO file descriptor is invalid" << std::endl;
-        return false;
-    }
-
     char value;
     lseek(fd, 0, SEEK_SET); // 重置文件偏移量
     if (read(fd, &value, 1) != 1)
