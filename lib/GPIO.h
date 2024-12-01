@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-10-10 15:02:00
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 05:17:26
+ * @LastEditTime: 2024-12-01 13:27:38
  * @FilePath: /ls2k0300_peripheral_library/lib/GPIO.h
  * @Description: GPIO类
  *
@@ -27,11 +27,11 @@ public:
     GPIO(int gpioNum_);
     ~GPIO(void);
 
-    bool setDirection(const std::string &direction);
+    int getFileDescriptor(void) const;               // 获取 GPIO 文件描述符
+    bool setDirection(const std::string &direction); // 设置GPIO方向，out为输出，in为输入
+    bool setValue(bool value);                       // 设置 GPIO 输出值
+    bool readValue(void);                            // 读取 GPIO 输入值
     bool setEdge(const std::string &edge);
-    bool setValue(bool value);         // 设置 GPIO 输出值
-    bool readValue(void);              // 读取 GPIO 输入值
-    int getFileDescriptor(void) const; // 获取 GPIO 文件描述符
 
 private:
     int gpioNum;

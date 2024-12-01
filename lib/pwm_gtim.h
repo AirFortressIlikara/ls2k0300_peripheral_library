@@ -2,13 +2,12 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 08:14:34
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 04:43:46
+ * @LastEditTime: 2024-12-01 13:23:26
  * @FilePath: /ls2k0300_peripheral_library/lib/pwm_gtim.h
- * @Description: 基于LS2K0300 GTIMER的PWM控制器类
+ * @Description: 基于LS2K0300 GTIMER的PWM控制器类，可使用复用为TIM2_CHx的引脚
  *
  * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
  */
-
 #ifndef PWM_GTIM_H_
 #define PWM_GTIM_H_
 
@@ -46,11 +45,6 @@
 #define GTIM_CCR4_OFFSET 0x40
 #define GTIM_INSTA_OFFSET 0x50
 
-#define PAGE_SIZE 0x10000
-
-#define REG_READ(addr) (*(volatile uint32_t *)(addr))
-#define REG_WRITE(addr, val) (*(volatile uint32_t *)(addr) = (val))
-
 class PWM_GTIM
 {
 public:
@@ -65,8 +59,6 @@ public:
 
 private:
     uint32_t chNum;
-    void PWM_Init(void);
-    void reset_counter(void);
     void *ccmr_buffer[2];
     void *ccer_buffer;
     void *period_buffer;

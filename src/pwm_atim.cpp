@@ -1,16 +1,16 @@
 /*
  * @Author: ilikara 3435193369@qq.com
- * @Date: 2024-11-30 08:07:26
+ * @Date: 2024-11-30 04:18:01
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 13:21:43
- * @FilePath: /ls2k0300_peripheral_library/src/pwm_gtim.cpp
- * @Description: 基于LS2K0300 GTIMER的PWM控制器类，可使用复用为TIM2_CHx的引脚
+ * @LastEditTime: 2024-12-01 13:24:44
+ * @FilePath: /ls2k0300_peripheral_library/src/pwm_atim.cpp
+ * @Description: 基于LS2K0300 ATIMER的PWM控制器类，可使用复用为TIM1_CHx的引脚，未测试
  *
  * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
  */
-#include "pwm_gtim.h"
+#include "pwm_atim.h"
 
-PWM_GTIM::PWM_GTIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cycle_10ns_)
+PWM_ATIM::PWM_ATIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cycle_10ns_)
     : period_10ns(period_10ns_), duty_cycle_10ns(duty_cycle_10ns_), chNum(chNum_ - 1)
 {
     { // 配置功能复用
@@ -19,17 +19,17 @@ PWM_GTIM::PWM_GTIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cyc
     }
 
     // 初始化所有寄存器
-    REG_WRITE(map_register(GTIM_BASE_ADDR + GTIM_EGR_OFFSET, PAGE_SIZE), 0x01);
+    REG_WRITE(map_register(ATIM_BASE_ADDR + ATIM_EGR_OFFSET, PAGE_SIZE), 0x01);
 
     // 启动计数器
-    REG_WRITE(map_register(GTIM_BASE_ADDR + GTIM_CR1_OFFSET, PAGE_SIZE), 0x01);
+    REG_WRITE(map_register(ATIM_BASE_ADDR + ATIM_CR1_OFFSET, PAGE_SIZE), 0x01);
 
-    period_buffer = map_register(GTIM_BASE_ADDR + GTIM_ARR_OFFSET, PAGE_SIZE);
-    duty_cycle_buffer = map_register(GTIM_BASE_ADDR + GTIM_CCR1_OFFSET + chNum * 0x04, PAGE_SIZE);
-    ccmr_buffer[0] = map_register(GTIM_BASE_ADDR + GTIM_CCMR1_OFFSET, PAGE_SIZE);
-    ccmr_buffer[1] = map_register(GTIM_BASE_ADDR + GTIM_CCMR2_OFFSET, PAGE_SIZE);
-    ccer_buffer = map_register(GTIM_BASE_ADDR + GTIM_CCER_OFFSET, PAGE_SIZE);
-    cnt_buffer = map_register(GTIM_BASE_ADDR + GTIM_CNT_OFFSET, PAGE_SIZE);
+    period_buffer = map_register(ATIM_BASE_ADDR + ATIM_ARR_OFFSET, PAGE_SIZE);
+    duty_cycle_buffer = map_register(ATIM_BASE_ADDR + ATIM_CCR1_OFFSET + chNum * 0x04, PAGE_SIZE);
+    ccmr_buffer[0] = map_register(ATIM_BASE_ADDR + ATIM_CCMR1_OFFSET, PAGE_SIZE);
+    ccmr_buffer[1] = map_register(ATIM_BASE_ADDR + ATIM_CCMR2_OFFSET, PAGE_SIZE);
+    ccer_buffer = map_register(ATIM_BASE_ADDR + ATIM_CCER_OFFSET, PAGE_SIZE);
+    cnt_buffer = map_register(ATIM_BASE_ADDR + ATIM_CNT_OFFSET, PAGE_SIZE);
 
     // 清除chNum的PWM模式
     REG_WRITE(ccmr_buffer[chNum / 2], REG_READ(ccmr_buffer[chNum / 2]) & ~(0x7 << (chNum % 2 * 8 + 4)));
@@ -48,7 +48,7 @@ PWM_GTIM::PWM_GTIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cyc
     printf("Registers mapped successfully\n");
 }
 
-PWM_GTIM::~PWM_GTIM(void)
+PWM_ATIM::~PWM_ATIM(void)
 {
     munmap(ccmr_buffer[0], PAGE_SIZE);
     munmap(ccmr_buffer[1], PAGE_SIZE);
@@ -58,18 +58,18 @@ PWM_GTIM::~PWM_GTIM(void)
     munmap(cnt_buffer, PAGE_SIZE);
 }
 
-void PWM_GTIM::enable(void)
+void PWM_ATIM::enable(void)
 {
     REG_WRITE(ccer_buffer, REG_READ(ccer_buffer) | (0x1 << (chNum * 4 + 0)));
 }
 
-void PWM_GTIM::disable(void)
+void PWM_ATIM::disable(void)
 {
     REG_WRITE(ccer_buffer, REG_READ(ccer_buffer) & ~(0x1 << (chNum * 4 + 0)));
 }
 
 // 设置周期（以10纳秒为单位）
-void PWM_GTIM::setPeriod(unsigned int period_10ns_)
+void PWM_ATIM::setPeriod(unsigned int period_10ns_)
 {
     period_10ns = period_10ns_;
     REG_WRITE(period_buffer, period_10ns);
@@ -78,7 +78,7 @@ void PWM_GTIM::setPeriod(unsigned int period_10ns_)
 }
 
 // 设置低电平时间（以10纳秒为单位）
-void PWM_GTIM::setDutyCycle(unsigned int duty_cycle_10ns_)
+void PWM_ATIM::setDutyCycle(unsigned int duty_cycle_10ns_)
 {
     duty_cycle_10ns = duty_cycle_10ns_;
     REG_WRITE(duty_cycle_buffer, duty_cycle_10ns);
