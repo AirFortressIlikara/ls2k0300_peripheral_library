@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 08:07:26
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 13:21:43
+ * @LastEditTime: 2024-12-01 15:05:51
  * @FilePath: /ls2k0300_peripheral_library/src/pwm_gtim.cpp
  * @Description: 基于LS2K0300 GTIMER的PWM控制器类，可使用复用为TIM2_CHx的引脚
  *
@@ -15,7 +15,7 @@ PWM_GTIM::PWM_GTIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cyc
 {
     { // 配置功能复用
         void *gpio_mux_buffer = map_register(GPIO_MUX_BASE_ADDR + (gpio / 16) * 0x04, PAGE_SIZE);
-        REG_WRITE(gpio_mux_buffer, REG_READ(gpio_mux_buffer) | (mux << (gpio % 16 * 2)));
+        REG_WRITE(gpio_mux_buffer, REG_READ(gpio_mux_buffer) & ~(0b11 << (gpio % 16 * 2)) | (mux << (gpio % 16 * 2)));
     }
 
     // 初始化所有寄存器
