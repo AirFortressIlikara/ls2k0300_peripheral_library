@@ -10,7 +10,22 @@
 -->
 # ls2k0300_peripheral_library
 
-bilibili个人主页：https://space.bilibili.com/317252912
+欢迎关注我的bilibili个人主页：https://space.bilibili.com/317252912
+
+后续会有更多视频教程发布。
+
+## 这个仓库提供了什么
+
+测试过的功能
+- 基于GTIM控制器的PWM类
+- 基于PWM控制器的方向编码器
+
+未测试的功能
+- 基于ATIM控制器的PWM类
+
+开发计划
+- 修改为驱动程序
+- 迁移到RUST
 
 本仓库持续更新中
 
