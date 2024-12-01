@@ -10,6 +10,10 @@
 -->
 # ls2k0300_peripheral_library
 
+bilibili个人主页：https://space.bilibili.com/317252912
+
+本仓库持续更新中
+
 ## 久久派引脚功能复用表
 久久派引出io的常用复用功能见下表，不常用功能未列举，请自行查询手册。
 
