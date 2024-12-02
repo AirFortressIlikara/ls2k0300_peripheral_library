@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 10:23:31
+ * @LastEditTime: 2024-12-02 10:36:22
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -303,11 +303,6 @@ static int ls_pwm_gtim_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(ls_pwm_gtim_pm_ops, ls_pwm_gtim_suspend, ls_pwm_gtim_resume);
 
-static const struct acpi_device_id loongson_pwm_gtim_acpi_match[] = {
-	{"LOON0006"},
-	{}};
-MODULE_DEVICE_TABLE(acpi, loongson_pwm_gtim_acpi_match);
-
 static struct platform_driver ls_pwm_gtim_driver = {
 	.driver = {
 		.name = "ls-pwm-gtim",
@@ -317,7 +312,6 @@ static struct platform_driver ls_pwm_gtim_driver = {
 #ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(ls_pwm_gtim_id_table),
 #endif
-		.acpi_match_table = ACPI_PTR(loongson_pwm_gtim_acpi_match),
 	},
 	.probe = ls_pwm_gtim_probe,
 	.remove = ls_pwm_gtim_remove,
