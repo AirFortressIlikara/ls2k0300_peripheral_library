@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 09:06:56
+ * @LastEditTime: 2024-12-02 09:13:15
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -66,6 +66,7 @@ struct ls_pwm_gtim_chip
 	void __iomem *mmio_base;
 	/* following registers used for suspend/resume */
 	u32 irq;
+	u32 period_reg;
 	u32 ccer_reg;
 	u64 clock_frequency;
 };
@@ -99,13 +100,13 @@ static void ls_pwm_gtim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	u32 ret;
 
 	if (pwm->state.polarity == PWM_POLARITY_NORMAL)
-		writel(ls_pwm->full_buffer_reg, ls_pwm->mmio_base + LOW_BUFFER);
+		writel(ls_pwm->period_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
 	else if (pwm->state.polarity == PWM_POLARITY_INVERSED)
-		writel(0, ls_pwm->mmio_base + LOW_BUFFER);
+		writel(0, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
 
-	ret = readl(ls_pwm->mmio_base + CTRL);
+	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
 	ret &= ~CTRL_EN;
-	writel(ret, ls_pwm->mmio_base + CTRL);
+	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
 }
 
 static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
