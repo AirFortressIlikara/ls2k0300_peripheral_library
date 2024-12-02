@@ -2,19 +2,17 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 10:36:22
+ * @LastEditTime: 2024-12-02 10:46:55
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
  * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
  */
-#include <linux/acpi.h>
+#include <linux/init.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/clocksource.h>
 #include <linux/clockchips.h>
-#include <linux/interrupt.h>
-#include <linux/irq.h>
 
 #include <linux/clk.h>
 #include <linux/err.h>
@@ -317,3 +315,23 @@ static struct platform_driver ls_pwm_gtim_driver = {
 	.remove = ls_pwm_gtim_remove,
 };
 module_platform_driver(ls_pwm_gtim_driver);
+
+static int __init ls_pwm_gtim_init(void)
+{
+	int ret;
+
+	ret =  platform_driver_register(&ls_pwm_gtim_driver);
+	return ret;
+}
+
+static void __exit ls_pwm_gtim_exit(void)
+{
+	platform_driver_unregister(&ls_pwm_gtim_driver);
+}
+
+subsys_initcall(ls_pwm_gtim_init);
+module_exit(ls_pwm_gtim_exit);
+
+MODULE_AUTHOR("Ilikara <3435193369@qq.com>");
+MODULE_DESCRIPTION("Loongson Gtimer Pwm Driver");
+MODULE_LICENSE("GPL");
