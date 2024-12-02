@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 08:11:13
+ * @LastEditTime: 2024-12-02 09:02:03
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -46,14 +46,14 @@
 #define GTIM_INSTA 0x50
 
 /* CTRL counter each bit */
-#define CTRL_EN BIT(0)
+#define CTRL_EN BIT(pwm->hwpwm * 4 + 0)
 #define CTRL_OE BIT(3)
 #define CTRL_SINGLE BIT(4)
 #define CTRL_INTE BIT(5)
 #define CTRL_INT BIT(6)
 #define CTRL_RST BIT(7)
 #define CTRL_CAPTE BIT(8)
-#define CTRL_INVERT BIT(9)
+#define CTRL_INVERT BIT(pwm->hwpwm * 4 + 1)
 #define CTRL_DZONE BIT(10)
 
 #define to_ls_pwm_gtim_chip(_chip) container_of(_chip, struct ls_pwm_gtim_chip, chip)
@@ -66,8 +66,6 @@ struct ls_pwm_gtim_chip{
 	/* following registers used for suspend/resume */
 	u32	irq;
 	u32	ctrl_reg;
-	u32	low_buffer_reg;
-	u32	full_buffer_reg;
 	u64	clock_frequency;
 };
 
@@ -81,10 +79,10 @@ static int ls_pwm_gtim_set_polarity(struct pwm_chip *chip,
 	val = readl(ls_pwm->mmio_base + GTIM_CCER);
         switch (polarity) {
         case PWM_POLARITY_NORMAL:
-                val &= ~BIT(pwm->hwpwm * 4 + 1);
+                val &= ~CTRL_INVERT;
                 break;
         case PWM_POLARITY_INVERSED:
-                val |= BIT(pwm->hwpwm * 4 + 1);
+                val |= CTRL_INVERT;
                 break;
         default:
                 break;
@@ -171,20 +169,18 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	/*
 	 * period_ns = period_reg *NSEC_PER_SEC /ls_pwm->clock_frequency.
 	 */
-	period_reg = readl(ls_pwm->mmio_base + FULL_BUFFER);
+	period_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, period_reg);
 
-	duty_reg = readl(ls_pwm->mmio_base + LOW_BUFFER);
+	duty_reg = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
 	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, duty_reg);
 
-	ctrl_reg = readl(ls_pwm->mmio_base + CTRL);
+	ctrl_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
 	state->polarity = (ctrl_reg & CTRL_INVERT) ? PWM_POLARITY_INVERSED
 		: PWM_POLARITY_NORMAL;
 	state->enabled = (ctrl_reg & CTRL_EN) ? true : false;
 
 	ls_pwm->ctrl_reg = ctrl_reg;
-	ls_pwm->low_buffer_reg = readl(ls_pwm->mmio_base + LOW_BUFFER);
-	ls_pwm->full_buffer_reg = readl(ls_pwm->mmio_base + FULL_BUFFER);
 }
 
 static const struct pwm_ops ls_pwm_gtim_ops = {
