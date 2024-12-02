@@ -11,6 +11,8 @@
 # ls2k0300_peripheral_library
 
 欢迎关注我的bilibili个人主页：https://space.bilibili.com/317252912
+- 交叉编译FFmpeg https://www.bilibili.com/opus/1006195805380411430
+- 交叉编译OpenCV https://www.bilibili.com/video/BV1Q2zbYrEvS/
 
 后续会有更多视频教程发布。
 
