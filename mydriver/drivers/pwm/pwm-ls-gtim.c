@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 09:13:15
+ * @LastEditTime: 2024-12-02 09:16:15
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -66,7 +66,8 @@ struct ls_pwm_gtim_chip
 	void __iomem *mmio_base;
 	/* following registers used for suspend/resume */
 	u32 irq;
-	u32 period_reg;
+	u32 arr_reg;
+	u32 ccr_reg[4];
 	u32 ccer_reg;
 	u64 clock_frequency;
 };
@@ -100,7 +101,7 @@ static void ls_pwm_gtim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	u32 ret;
 
 	if (pwm->state.polarity == PWM_POLARITY_NORMAL)
-		writel(ls_pwm->period_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+		writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
 	else if (pwm->state.polarity == PWM_POLARITY_INVERSED)
 		writel(0, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
 
@@ -114,12 +115,12 @@ static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
 	int ret;
 
-	writel(ls_pwm->low_buffer_reg, ls_pwm->mmio_base + LOW_BUFFER);
-	writel(ls_pwm->full_buffer_reg, ls_pwm->mmio_base + FULL_BUFFER);
+	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
 
-	ret = readl(ls_pwm->mmio_base + CTRL);
+	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
 	ret |= CTRL_EN;
-	writel(ret, ls_pwm->mmio_base + CTRL);
+	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
 	return 0;
 }
 
@@ -127,26 +128,26 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 							  int duty_ns, int period_ns)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
-	unsigned int period_reg, duty_reg;
+	unsigned int arr_reg, duty_reg;
 	unsigned long long val0, val1;
 
 	if (period_ns > NS_IN_HZ || duty_ns > NS_IN_HZ)
 		return -ERANGE;
 
 	/*
-	 * period_reg = period_ns/(NSEC_PER_SEC/ls_pwm->clock_frequency);
-	 * period_reg = period_ns * ls_pwm->clock_frequency / NSEC_PER_SEC;
+	 * arr_reg = period_ns/(NSEC_PER_SEC/ls_pwm->clock_frequency);
+	 * arr_reg = period_ns * ls_pwm->clock_frequency / NSEC_PER_SEC;
 	 */
 	val0 = ls_pwm->clock_frequency * period_ns;
 	do_div(val0, NSEC_PER_SEC);
-	period_reg = val0 < 1 ? 1 : val0;
+	arr_reg = val0 < 1 ? 1 : val0;
 
 	val1 = ls_pwm->clock_frequency * duty_ns;
 	do_div(val1, NSEC_PER_SEC);
 	duty_reg = val1 < 1 ? 1 : val1;
 
 	writel(duty_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
-	writel(period_reg, ls_pwm->mmio_base + GTIM_ARR);
+	writel(arr_reg, ls_pwm->mmio_base + GTIM_ARR);
 	return 0;
 }
 
@@ -163,14 +164,14 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 						   struct pwm_state *state)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
-	unsigned int period_reg, duty_reg;
+	unsigned int arr_reg, duty_reg;
 	u32 ccer_reg;
 
 	/*
-	 * period_ns = period_reg *NSEC_PER_SEC /ls_pwm->clock_frequency.
+	 * period_ns = arr_reg *NSEC_PER_SEC /ls_pwm->clock_frequency.
 	 */
-	period_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
-	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, period_reg);
+	arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
+	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, arr_reg);
 
 	duty_reg = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
 	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, duty_reg);
