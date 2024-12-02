@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 09:16:15
+ * @LastEditTime: 2024-12-02 10:23:31
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -65,7 +65,6 @@ struct ls_pwm_gtim_chip
 	struct pwm_chip chip;
 	void __iomem *mmio_base;
 	/* following registers used for suspend/resume */
-	u32 irq;
 	u32 arr_reg;
 	u32 ccr_reg[4];
 	u32 ccer_reg;
@@ -128,7 +127,7 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 							  int duty_ns, int period_ns)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
-	unsigned int arr_reg, duty_reg;
+	unsigned int arr_reg, ccr_reg;
 	unsigned long long val0, val1;
 
 	if (period_ns > NS_IN_HZ || duty_ns > NS_IN_HZ)
@@ -144,10 +143,13 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 
 	val1 = ls_pwm->clock_frequency * duty_ns;
 	do_div(val1, NSEC_PER_SEC);
-	duty_reg = val1 < 1 ? 1 : val1;
+	ccr_reg = val1 < 1 ? 1 : val1;
 
-	writel(duty_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+	writel(ccr_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
 	writel(arr_reg, ls_pwm->mmio_base + GTIM_ARR);
+
+	ls_pwm->arr_reg = arr_reg;
+	ls_pwm->ccr_reg[pwm->hwpwm] = ccr_reg;
 	return 0;
 }
 
@@ -164,7 +166,7 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 						   struct pwm_state *state)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
-	unsigned int arr_reg, duty_reg;
+	unsigned int arr_reg, ccr_reg;
 	u32 ccer_reg;
 
 	/*
@@ -173,8 +175,8 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, arr_reg);
 
-	duty_reg = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
-	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, duty_reg);
+	ccr_reg = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
+	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, ccr_reg);
 
 	ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
 	state->polarity = (ccer_reg & CTRL_INVERT) ? PWM_POLARITY_INVERSED
@@ -182,6 +184,8 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	state->enabled = (ccer_reg & CTRL_EN) ? true : false;
 
 	ls_pwm->ccer_reg = ccer_reg;
+	ls_pwm->ccr_reg[pwm->hwpwm] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
+	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 }
 
 static const struct pwm_ops ls_pwm_gtim_ops = {
@@ -192,17 +196,6 @@ static const struct pwm_ops ls_pwm_gtim_ops = {
 	.get_state = ls_pwm_gtim_get_state,
 	.owner = THIS_MODULE,
 };
-static irqreturn_t pwm_ls2x_isr(int irq, void *dev)
-{
-	int ret;
-	struct ls_pwm_gtim_chip *ls_pwm = (struct ls_pwm_gtim_chip *)dev;
-	ret = readl(ls_pwm->mmio_base + CTRL);
-	ret |= CTRL_INT;
-
-	writel(ret, ls_pwm->mmio_base + CTRL);
-
-	return IRQ_HANDLED;
-}
 
 static int ls_pwm_gtim_probe(struct platform_device *pdev)
 {
@@ -211,14 +204,6 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 	int err;
 	struct device_node *np = pdev->dev.of_node;
 	u32 clk;
-	u32 irq;
-
-	irq = platform_get_irq(pdev, 0);
-	if (irq <= 0)
-	{
-		dev_err(&pdev->dev, "no irq resource?\n");
-		return -ENODEV;
-	}
 
 	pwm = devm_kzalloc(&pdev->dev, sizeof(*pwm), GFP_KERNEL);
 	if (!pwm)
@@ -251,16 +236,6 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "mmio_base is null\n");
 		return -ENOMEM;
 	}
-	pwm->irq = irq;
-
-	if (pdev->dev.of_node && of_device_is_compatible(pdev->dev.of_node, "loongson,ls300-pwm"))
-	{
-		err = request_irq(pwm->irq, pwm_ls2x_isr, IRQF_SHARED, "pwm_interrupts", pwm);
-	}
-	else
-	{
-		err = request_irq(pwm->irq, pwm_ls2x_isr, IRQF_TRIGGER_FALLING, "pwm_interrupts", pwm);
-	}
 
 	if (err)
 		dev_err(&pdev->dev, "failure requesting irq %d\n", err);
@@ -283,7 +258,6 @@ static int ls_pwm_gtim_remove(struct platform_device *pdev)
 	int err;
 	if (!pwm)
 		return -ENODEV;
-	free_irq(pwm->irq, NULL);
 	err = pwmchip_remove(&pwm->chip);
 	if (err < 0)
 		return err;
@@ -293,10 +267,7 @@ static int ls_pwm_gtim_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_OF
 static struct of_device_id ls_pwm_gtim_id_table[] = {
-	{.compatible = "loongson,ls7a-pwm"},
-	{.compatible = "loongson,ls-pwm"},
-	{.compatible = "loongson,ls2k-pwm"},
-	{.compatible = "loongson,ls300-pwm"},
+	{.compatible = "loongson,ls300-pwm-gtim"},
 	{},
 };
 MODULE_DEVICE_TABLE(of, ls_pwm_gtim_id_table);
@@ -307,9 +278,12 @@ static int ls_pwm_gtim_suspend(struct device *dev)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = dev_get_drvdata(dev);
 
-	ls_pwm->ccer_reg = readl(ls_pwm->mmio_base + CTRL);
-	ls_pwm->low_buffer_reg = readl(ls_pwm->mmio_base + LOW_BUFFER);
-	ls_pwm->full_buffer_reg = readl(ls_pwm->mmio_base + FULL_BUFFER);
+	ls_pwm->ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
+	ls_pwm->ccr_reg[0] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x0);
+	ls_pwm->ccr_reg[1] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x4);
+	ls_pwm->ccr_reg[2] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x8);
+	ls_pwm->ccr_reg[3] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0xC);
+	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 	return 0;
 }
 
@@ -317,30 +291,33 @@ static int ls_pwm_gtim_resume(struct device *dev)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = dev_get_drvdata(dev);
 
-	writel(ls_pwm->ccer_reg, ls_pwm->mmio_base + CTRL);
-	writel(ls_pwm->low_buffer_reg, ls_pwm->mmio_base + LOW_BUFFER);
-	writel(ls_pwm->full_buffer_reg, ls_pwm->mmio_base + FULL_BUFFER);
+	writel(ls_pwm->ccer_reg, ls_pwm->mmio_base + GTIM_CCER);
+	writel(ls_pwm->ccr_reg[0], ls_pwm->mmio_base + GTIM_CCR1 + 0x0);
+	writel(ls_pwm->ccr_reg[1], ls_pwm->mmio_base + GTIM_CCR1 + 0x4);
+	writel(ls_pwm->ccr_reg[2], ls_pwm->mmio_base + GTIM_CCR1 + 0x8);
+	writel(ls_pwm->ccr_reg[3], ls_pwm->mmio_base + GTIM_CCR1 + 0xC);
+	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
 	return 0;
 }
 #endif
 
 static SIMPLE_DEV_PM_OPS(ls_pwm_gtim_pm_ops, ls_pwm_gtim_suspend, ls_pwm_gtim_resume);
 
-static const struct acpi_device_id loongson_pwm_acpi_match[] = {
+static const struct acpi_device_id loongson_pwm_gtim_acpi_match[] = {
 	{"LOON0006"},
 	{}};
-MODULE_DEVICE_TABLE(acpi, loongson_pwm_acpi_match);
+MODULE_DEVICE_TABLE(acpi, loongson_pwm_gtim_acpi_match);
 
 static struct platform_driver ls_pwm_gtim_driver = {
 	.driver = {
-		.name = "ls-pwm",
+		.name = "ls-pwm-gtim",
 		.owner = THIS_MODULE,
 		.bus = &platform_bus_type,
 		.pm = &ls_pwm_gtim_pm_ops,
 #ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(ls_pwm_gtim_id_table),
 #endif
-		.acpi_match_table = ACPI_PTR(loongson_pwm_acpi_match),
+		.acpi_match_table = ACPI_PTR(loongson_pwm_gtim_acpi_match),
 	},
 	.probe = ls_pwm_gtim_probe,
 	.remove = ls_pwm_gtim_remove,

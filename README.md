@@ -2,17 +2,18 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 07:16:46
+ * @LastEditTime: 2024-12-02 09:32:44
  * @FilePath: /ls2k0300_peripheral_library/README.md
- * @Description: 
+ * @Description: github README
  * 
- * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved. 
+ * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved. 
 -->
 # ls2k0300_peripheral_library
 
 欢迎关注我的bilibili个人主页：https://space.bilibili.com/317252912
 - 交叉编译FFmpeg https://www.bilibili.com/opus/1006195805380411430
 - 交叉编译OpenCV https://www.bilibili.com/video/BV1Q2zbYrEvS/
+- 在设备树中加入SPI1的屏幕节点 https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142
 
 后续会有更多视频教程发布。
 
