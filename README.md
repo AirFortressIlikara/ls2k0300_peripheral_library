@@ -10,6 +10,27 @@
 -->
 # ls2k0300_peripheral_library
 
+欢迎关注我的bilibili个人主页：https://space.bilibili.com/317252912
+- 交叉编译FFmpeg https://www.bilibili.com/opus/1006195805380411430
+- 交叉编译OpenCV https://www.bilibili.com/video/BV1Q2zbYrEvS/
+
+后续会有更多视频教程发布。
+
+## 这个仓库提供了什么
+
+测试过的功能
+- 基于GTIM控制器的PWM类
+- 基于PWM控制器的方向编码器
+
+未测试的功能
+- 基于ATIM控制器的PWM类
+
+开发计划
+- 修改为驱动程序
+- 迁移到RUST
+
+本仓库持续更新中
+
 ## 久久派引脚功能复用表
 久久派引出io的常用复用功能见下表，不常用功能未列举，请自行查询手册。
 
