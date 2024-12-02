@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 08:00:04
+ * @LastEditTime: 2024-12-02 08:11:13
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -81,10 +81,10 @@ static int ls_pwm_gtim_set_polarity(struct pwm_chip *chip,
 	val = readl(ls_pwm->mmio_base + GTIM_CCER);
         switch (polarity) {
         case PWM_POLARITY_NORMAL:
-                val &= ~CTRL_INVERT;
+                val &= ~BIT(pwm->hwpwm * 4 + 1);
                 break;
         case PWM_POLARITY_INVERSED:
-                val |= CTRL_INVERT;
+                val |= BIT(pwm->hwpwm * 4 + 1);
                 break;
         default:
                 break;
@@ -231,7 +231,7 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 	pwm->chip.dev = &pdev->dev;
 	pwm->chip.ops = &ls_pwm_gtim_ops;
 	pwm->chip.base = -1;
-	pwm->chip.npwm = 1;
+	pwm->chip.npwm = 4;
 
 	if (!(of_property_read_u32(np, "clock-frequency", &clk)))
 		pwm->clock_frequency = clk;
