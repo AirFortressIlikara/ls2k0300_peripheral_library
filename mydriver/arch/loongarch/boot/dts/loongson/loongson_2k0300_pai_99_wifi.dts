@@ -1,0 +1,5 @@
+&pwm_gtim{
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = <&gtim2_pin_f1>;
+};

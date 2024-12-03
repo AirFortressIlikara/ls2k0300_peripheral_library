@@ -1,0 +1,1 @@
+obj-$(CONFIG_PWM_LS_GTIM)	+= pwm-ls-gtim.o

@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 10:46:55
+ * @LastEditTime: 2024-12-03 09:16:49
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -31,28 +31,31 @@
 #define GTIM_DIER 0x0C
 #define GTIM_SR 0x10
 #define GTIM_EGR 0x14
-#define GTIM_CCMR1 0x18
-#define GTIM_CCMR2 0x1C
+#define GTIM_CCMRn 0x18 + (pwm->hwpwm / 2) * 0x04
 #define GTIM_CCER 0x20
 #define GTIM_CNT 0x24
 #define GTIM_PSC 0x28
 #define GTIM_ARR 0x2C
 #define GTIM_CCR1 0x34
-#define GTIM_CCR2 0x38
-#define GTIM_CCR3 0x3C
-#define GTIM_CCR4 0x40
+#define GTIM_CCRn 0x34 + pwm->hwpwm * 0x04
 #define GTIM_INSTA 0x50
 
-/* CTRL counter each bit */
-#define CTRL_EN BIT(pwm->hwpwm * 4 + 0)
-#define CTRL_OE BIT(3)
-#define CTRL_SINGLE BIT(4)
-#define CTRL_INTE BIT(5)
-#define CTRL_INT BIT(6)
-#define CTRL_RST BIT(7)
-#define CTRL_CAPTE BIT(8)
-#define CTRL_INVERT BIT(pwm->hwpwm * 4 + 1)
-#define CTRL_DZONE BIT(10)
+/* CR1 each bit */
+#define CR1_CEN BIT(0)
+
+/* EGR each bit */
+#define EGR_UG BIT(0)
+
+/* CCMR each bit */
+#define CCMR_OCnS BIT(pwm->hwpwm % 2 * 8 + 0)
+#define CCMR_OCnFE BIT(pwm->hwpwm % 2 * 8 + 2)
+#define CCMR_OCnPE BIT(pwm->hwpwm % 2 * 8 + 3)
+#define CCMR_OCnM BIT(pwm->hwpwm % 2 * 8 + 4)
+#define CCMR_OCnCE BIT(pwm->hwpwm % 2 * 8 + 7)
+
+/* CCER each bit */
+#define CCER_CCnE BIT(pwm->hwpwm * 4 + 0)
+#define CCER_CCnP BIT(pwm->hwpwm * 4 + 1)
 
 #define to_ls_pwm_gtim_chip(_chip) container_of(_chip, struct ls_pwm_gtim_chip, chip)
 #define NS_IN_HZ (1000000000UL)
@@ -66,6 +69,7 @@ struct ls_pwm_gtim_chip
 	u32 arr_reg;
 	u32 ccr_reg[4];
 	u32 ccer_reg;
+	u32 en_mark;
 	u64 clock_frequency;
 };
 
@@ -80,10 +84,10 @@ static int ls_pwm_gtim_set_polarity(struct pwm_chip *chip,
 	switch (polarity)
 	{
 	case PWM_POLARITY_NORMAL:
-		val &= ~CTRL_INVERT;
+		val &= ~CCER_CCnP;
 		break;
 	case PWM_POLARITY_INVERSED:
-		val |= CTRL_INVERT;
+		val |= CCER_CCnP;
 		break;
 	default:
 		break;
@@ -96,28 +100,56 @@ static void ls_pwm_gtim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
 	u32 ret;
+	u32 cr1_reg, ccmr_reg;
 
 	if (pwm->state.polarity == PWM_POLARITY_NORMAL)
-		writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+		writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_CCRn);
 	else if (pwm->state.polarity == PWM_POLARITY_INVERSED)
-		writel(0, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+		writel(0, ls_pwm->mmio_base + GTIM_CCRn);
 
 	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
-	ret &= ~CTRL_EN;
+	ret &= ~CCER_CCnE;
 	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
+
+	ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
+	ccmr_reg &= ~(0b111 * CCMR_OCnM);
+	writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
+
+	ls_pwm->en_mark &= ~BIT(pwm->hwpwm);
+	if (ls_pwm->en_mark == 0b0000)
+	{
+		cr1_reg = readl(ls_pwm->mmio_base + GTIM_CR1);
+		cr1_reg &= ~CR1_CEN;
+		writel(cr1_reg, ls_pwm->mmio_base + GTIM_CR1);
+		writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
+	}
 }
 
 static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
 	int ret;
+	u32 cr1_reg, ccmr_reg;
 
-	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCRn);
 	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
 
+	ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
+	ccmr_reg |= 0b111 * CCMR_OCnM;
+	writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
+
 	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
-	ret |= CTRL_EN;
+	ret |= CCER_CCnE;
 	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
+
+	if (ls_pwm->en_mark == 0b0000)
+	{
+		writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
+		cr1_reg = readl(ls_pwm->mmio_base + GTIM_CR1);
+		cr1_reg |= CR1_CEN;
+		writel(cr1_reg, ls_pwm->mmio_base + GTIM_CR1);
+	}
+	ls_pwm->en_mark |= BIT(pwm->hwpwm);
 	return 0;
 }
 
@@ -143,8 +175,9 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 	do_div(val1, NSEC_PER_SEC);
 	ccr_reg = val1 < 1 ? 1 : val1;
 
-	writel(ccr_reg, ls_pwm->mmio_base + GTIM_CCR1 + pwm->hwpwm * 0x04);
+	writel(ccr_reg, ls_pwm->mmio_base + GTIM_CCRn);
 	writel(arr_reg, ls_pwm->mmio_base + GTIM_ARR);
+	writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
 
 	ls_pwm->arr_reg = arr_reg;
 	ls_pwm->ccr_reg[pwm->hwpwm] = ccr_reg;
@@ -173,16 +206,25 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, arr_reg);
 
-	ccr_reg = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
+	ccr_reg = readl(ls_pwm->mmio_base + GTIM_CCRn);
 	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, ccr_reg);
 
 	ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
-	state->polarity = (ccer_reg & CTRL_INVERT) ? PWM_POLARITY_INVERSED
-											   : PWM_POLARITY_NORMAL;
-	state->enabled = (ccer_reg & CTRL_EN) ? true : false;
+	state->polarity = (ccer_reg & CCER_CCnP) ? PWM_POLARITY_INVERSED
+											 : PWM_POLARITY_NORMAL;
+	state->enabled = (ccer_reg & CCER_CCnE) ? true : false;
+
+	if (state->enabled)
+	{
+		ls_pwm->en_mark |= BIT(pwm->hwpwm);
+	}
+	else
+	{
+		ls_pwm->en_mark &= ~BIT(pwm->hwpwm);
+	}
 
 	ls_pwm->ccer_reg = ccer_reg;
-	ls_pwm->ccr_reg[pwm->hwpwm] = readl(ls_pwm->mmio_base + GTIM_CCR1 + 0x04 * pwm->hwpwm);
+	ls_pwm->ccr_reg[pwm->hwpwm] = readl(ls_pwm->mmio_base + GTIM_CCRn);
 	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
 }
 
@@ -202,6 +244,7 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 	int err;
 	struct device_node *np = pdev->dev.of_node;
 	u32 clk;
+	u32 cr1_reg;
 
 	pwm = devm_kzalloc(&pdev->dev, sizeof(*pwm), GFP_KERNEL);
 	if (!pwm)
@@ -209,6 +252,8 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to allocate memory\n");
 		return -ENOMEM;
 	}
+
+	pwm->en_mark = 0b0000;
 
 	pwm->chip.dev = &pdev->dev;
 	pwm->chip.ops = &ls_pwm_gtim_ops;
@@ -235,15 +280,14 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	if (err)
-		dev_err(&pdev->dev, "failure requesting irq %d\n", err);
-
 	err = pwmchip_add(&pwm->chip);
 	if (err < 0)
 	{
 		dev_err(&pdev->dev, "pwmchip_add() failed: %d\n", err);
 		return err;
 	}
+
+	writel(EGR_UG, pwm->mmio_base + GTIM_EGR);
 
 	platform_set_drvdata(pdev, pwm);
 	dev_dbg(&pdev->dev, "pwm probe successful\n");
@@ -315,22 +359,6 @@ static struct platform_driver ls_pwm_gtim_driver = {
 	.remove = ls_pwm_gtim_remove,
 };
 module_platform_driver(ls_pwm_gtim_driver);
-
-static int __init ls_pwm_gtim_init(void)
-{
-	int ret;
-
-	ret =  platform_driver_register(&ls_pwm_gtim_driver);
-	return ret;
-}
-
-static void __exit ls_pwm_gtim_exit(void)
-{
-	platform_driver_unregister(&ls_pwm_gtim_driver);
-}
-
-subsys_initcall(ls_pwm_gtim_init);
-module_exit(ls_pwm_gtim_exit);
 
 MODULE_AUTHOR("Ilikara <3435193369@qq.com>");
 MODULE_DESCRIPTION("Loongson Gtimer Pwm Driver");

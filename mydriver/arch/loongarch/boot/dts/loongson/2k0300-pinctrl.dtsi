@@ -1,0 +1,43 @@
+	gtim1_pin: gtim1-pin{
+		gtim1_pin_f0: gtim1-pin-f0{
+			loongson,pinmux = <&gpa2 2 2>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		gtim1_pin_f1: gtim1-pin-f1{
+			loongson,pinmux = <&gpa5 7 7>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+	};
+
+	gtim2_pin: gtim2-pin{
+		gtim2_pin_f0: gtim2-pin-f0{
+			loongson,pinmux = <&gpa2 3 3>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		gtim2_pin_f1: gtim2-pin-f1{
+			loongson,pinmux = <&gpa5 8 8>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+	};
+
+	gtim3_pin: gtim3-pin{
+		gtim3_pin_f0: gtim3-pin-f0{
+			loongson,pinmux = <&gpa2 4 4>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION2>;
+		};
+		gtim3_pin_f1: gtim3-pin-f1{
+			loongson,pinmux = <&gpa5 9 9>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTIONMAIN>;
+		};
+	};
+
+	gtim4_pin: gtim4-pin{
+		gtim4_pin_f0: gtim4-pin-f0{
+			loongson,pinmux = <&gpa4 13 13>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+		gtim4_pin_f1: gtim4-pin-f1{
+			loongson,pinmux = <&gpa6 6 6>;
+			loongson,pinmux-funcsel = <PINCTL_FUNCTION1>;
+		};
+	};
