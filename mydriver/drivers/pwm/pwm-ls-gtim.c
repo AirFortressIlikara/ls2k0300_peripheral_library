@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-03 09:16:49
+ * @LastEditTime: 2024-12-03 09:57:23
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -107,10 +107,6 @@ static void ls_pwm_gtim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	else if (pwm->state.polarity == PWM_POLARITY_INVERSED)
 		writel(0, ls_pwm->mmio_base + GTIM_CCRn);
 
-	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
-	ret &= ~CCER_CCnE;
-	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
-
 	ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
 	ccmr_reg &= ~(0b111 * CCMR_OCnM);
 	writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
@@ -133,11 +129,7 @@ static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 
 	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCRn);
 	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
-
-	ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
-	ccmr_reg |= 0b111 * CCMR_OCnM;
-	writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
-
+	
 	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
 	ret |= CCER_CCnE;
 	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
@@ -159,6 +151,7 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
 	unsigned int arr_reg, ccr_reg;
 	unsigned long long val0, val1;
+	u32 ccmr_reg;
 
 	if (period_ns > NS_IN_HZ || duty_ns > NS_IN_HZ)
 		return -ERANGE;
@@ -167,6 +160,28 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 	 * arr_reg = period_ns/(NSEC_PER_SEC/ls_pwm->clock_frequency);
 	 * arr_reg = period_ns * ls_pwm->clock_frequency / NSEC_PER_SEC;
 	 */
+
+	if (duty_ns == 0)
+	{
+		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
+		ccmr_reg &= ~(0b111 * CCMR_OCnM);
+		ccmr_reg |= 0b101 * CCMR_OCnM;
+		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
+	}
+	else if (period_ns == duty_ns)
+	{
+		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
+		ccmr_reg &= ~(0b111 * CCMR_OCnM);
+		ccmr_reg |= 0b100 * CCMR_OCnM;
+		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
+	}
+	else
+	{
+		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMRn);
+		ccmr_reg |= 0b111 * CCMR_OCnM;
+		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMRn);
+	}
+
 	val0 = ls_pwm->clock_frequency * period_ns;
 	do_div(val0, NSEC_PER_SEC);
 	arr_reg = val0 < 1 ? 1 : val0;
@@ -244,7 +259,6 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 	int err;
 	struct device_node *np = pdev->dev.of_node;
 	u32 clk;
-	u32 cr1_reg;
 
 	pwm = devm_kzalloc(&pdev->dev, sizeof(*pwm), GFP_KERNEL);
 	if (!pwm)
