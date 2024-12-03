@@ -1,0 +1,8 @@
+		pwm_gtim: pwm@16119000{
+			compatible = "loongson,ls300-pwm-gtim";
+			reg = <0 0x16119000 0 0x1000>;
+			clock-frequency = <100000000>;
+			#pwm-cells = <2>;
+
+			status = "disabled";
+		};
