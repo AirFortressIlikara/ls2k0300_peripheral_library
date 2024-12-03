@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-02 09:32:44
+ * @LastEditTime: 2024-12-03 10:07:52
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -21,13 +21,14 @@
 
 测试过的功能
 - 基于GTIM控制器的PWM类
-- 基于PWM控制器的方向编码器
+- 基于GTIM控制器的PWM驱动
+- 基于PWM控制器的方向编码器类
 
 未测试的功能
 - 基于ATIM控制器的PWM类
 
 开发计划
-- 修改为驱动程序
+- 提供更多TIM驱动程序
 - 迁移到RUST
 
 本仓库持续更新中
