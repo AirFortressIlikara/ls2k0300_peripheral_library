@@ -13,6 +13,7 @@
 欢迎关注我的bilibili个人主页：https://space.bilibili.com/317252912
 - 交叉编译FFmpeg https://www.bilibili.com/opus/1006195805380411430
 - 交叉编译OpenCV https://www.bilibili.com/video/BV1Q2zbYrEvS/
+- GTIM驱动编译与安装 https://www.bilibili.com/video/BV1Ddi2YmESo/
 - 在设备树中加入SPI1的屏幕节点 https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142
 
 后续会有更多视频教程发布。
