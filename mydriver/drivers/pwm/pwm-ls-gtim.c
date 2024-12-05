@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-05 12:56:14
+ * @LastEditTime: 2024-12-05 13:23:55
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-gtim.c
  * @Description:
  *
@@ -31,7 +31,7 @@
 #define GTIM_DIER 0x0C
 #define GTIM_SR 0x10
 #define GTIM_EGR 0x14
-#define GTIM_CCMR(n) 0x18 + (n / 2) * 0x04
+#define GTIM_CCMR(n) 0x18 + ((n) / 2) * 0x04
 #define GTIM_CCER 0x20
 #define GTIM_CNT 0x24
 #define GTIM_PSC 0x28
@@ -46,15 +46,15 @@
 #define EGR_UG BIT(0)
 
 /* CCMR each bit */
-#define CCMR_OCnS(n) BIT(n % 2 * 8 + 0)
-#define CCMR_OCnFE(n) BIT(n % 2 * 8 + 2)
-#define CCMR_OCnPE(n) BIT(n % 2 * 8 + 3)
-#define CCMR_OCnM(n) BIT(n % 2 * 8 + 4)
-#define CCMR_OCnCE(n) BIT(n % 2 * 8 + 7)
+#define CCMR_CCnS(n) BIT((n) % 2 * 8 + 0)
+#define CCMR_OCnFE(n) BIT((n) % 2 * 8 + 2)
+#define CCMR_OCnPE(n) BIT((n) % 2 * 8 + 3)
+#define CCMR_OCnM(n) BIT((n) % 2 * 8 + 4)
+#define CCMR_OCnCE(n) BIT((n) % 2 * 8 + 7)
 
 /* CCER each bit */
-#define CCER_CCnE(n) BIT(n * 4 + 0)
-#define CCER_CCnP(n) BIT(n * 4 + 1)
+#define CCER_CCnE(n) BIT((n) * 4 + 0)
+#define CCER_CCnP(n) BIT((n) * 4 + 1)
 
 #define to_ls_pwm_gtim_chip(_chip) container_of(_chip, struct ls_pwm_gtim_chip, chip)
 #define NS_IN_HZ (1000000000UL)
@@ -127,7 +127,7 @@ static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 
 	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
 	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
-	
+
 	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
 	ret |= CCER_CCnE(pwm->hwpwm);
 	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
@@ -224,7 +224,7 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 
 	ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
 	state->polarity = (ccer_reg & CCER_CCnP(pwm->hwpwm)) ? PWM_POLARITY_INVERSED
-											 : PWM_POLARITY_NORMAL;
+														 : PWM_POLARITY_NORMAL;
 	state->enabled = (ccer_reg & CCER_CCnE(pwm->hwpwm)) ? true : false;
 
 	if (state->enabled)

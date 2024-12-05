@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-05 08:02:57
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-05 12:49:03
+ * @LastEditTime: 2024-12-05 13:40:54
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/media/mt9v034.c
  * @Description:
  *
@@ -26,7 +26,7 @@
 #define GTIM_DIER 0x0C
 #define GTIM_SR 0x10
 #define GTIM_EGR 0x14
-#define GTIM_CCMR(n) 0x18 + (n / 2) * 0x04
+#define GTIM_CCMR(n) 0x18 + ((n) / 2) * 0x04
 #define GTIM_CCER 0x20
 #define GTIM_CNT 0x24
 #define GTIM_PSC 0x28
@@ -38,27 +38,37 @@
 /* CR1 each bit */
 #define CR1_CEN BIT(0)
 
-/* DIER each bit*/
+/* DIER each bit */
 #define DIER_UIE BIT(0)
-#define DIER_CCnIE(n) BIT(1 + n)
+#define DIER_CCnIE(n) BIT(1 + (n))
 #define DIER_TIE BIT(6)
 #define DIER_UDE BIT(8)
-#define DIER_CCnDE(n) BIT(9 + n)
+#define DIER_CCnDE(n) BIT(9 + (n))
 #define DIER_TDE BIT(14)
+
+/* SR each bit */
+#define SR_UIF BIT(0)
+#define SR_CCnIF(n) BIT((n) + 1)
+#define SR_TIF BIT(6)
+#define SR_CCnOF(n) BIT((n) + 9)
 
 /* EGR each bit */
 #define EGR_UG BIT(0)
 
 /* CCMR each bit */
+#define CCMR_CCnS(n) BIT((n) % 2 * 8 + 0)
 
 /* CCER each bit */
 #define CCER_CCnE BIT(pwm->hwpwm * 4 + 0)
 #define CCER_CCnP BIT(pwm->hwpwm * 4 + 1)
 
+#define CAM_GTIM_CH (3 - 1)
+
 struct mt9v034_camera
 {
     struct gpio_desc *gpio[10];
     struct platform_device *gpio_pdev, *uart_pdev;
+    void __iomem *mmio_base;
     u32 irq;
     u32 start_gpio;
     u32 depth;
@@ -70,6 +80,8 @@ struct mt9v034_camera
 static irqreturn_t
 mt9v034_isr(int irq, void *dev)
 {
+
+    return IRQ_HANDLED;
 }
 
 static int
@@ -79,8 +91,30 @@ mt9v034_probe(struct platform_device *pdev)
     struct device_node *np = pdev->dev.of_node, *gpio_np, *uart_np;
 
     struct of_phandle_args data_pins_args;
+    struct resource *mem;
 
-    // 从设备树获取 GPIO 范围
+    cam = devm_kzalloc(&pdev->dev, sizeof(*cam), GFP_KERNEL);
+    if (!cam)
+    {
+        dev_err(&pdev->dev, "failed to allocate memory\n");
+        return -ENOMEM;
+    }
+
+    // 获取GTIM基地址
+    mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+    if (!mem)
+    {
+        dev_err(&pdev->dev, "no mem resource?\n");
+        return -ENODEV;
+    }
+    cam->mmio_base = devm_ioremap_resource(&pdev->dev, mem);
+    if (!cam->mmio_base)
+    {
+        dev_err(&pdev->dev, "mmio_base is null\n");
+        return -ENOMEM;
+    }
+
+    // 获取 GPIO 范围
     if (of_parse_phandle_with_fixed_args(np, "data-pins", 4, 0, &data_pins_args) < 0)
     {
         dev_err(&pdev->dev, "Failed to parse data-pins\n");
@@ -100,6 +134,7 @@ mt9v034_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "GPIO out of range\n");
         return -EINVAL;
     }
+
     // 设置gpio为输入
     for (u32 i = 0; i < cam->depth; ++i)
     {
@@ -115,34 +150,26 @@ mt9v034_probe(struct platform_device *pdev)
     struct uart_port *port = platform_get_drvdata(cam->uart_pdev);
 
     // 配置波特率
-    uart_set_options(port, NULL, 9600, 'n', 8, 0);
+    // uart_set_options(port, NULL, 9600, 'n', 8, 0);
 
-    uart_write(port, (u_char *));
+    // uart_write(port, (u_char *));
     dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n", start_gpio, ngpios);
 
-    // 请求并操作每个 GPIO
-    for (i = 0; i < ngpios; i++)
-    {
-        int gpio_number = start_gpio + i;
+    // 启用GTIM_CH3的捕获中断，通道号定义在CAM_GTIM_CH
 
-        if (gpio_request(gpio_number, "my-gpio"))
-        {
-            dev_err(&pdev->dev, "Failed to request GPIO %d\n", gpio_number);
-            continue;
-        }
+    u32 ccmr_reg = readl(cam->mmio_base + GTIM_CCMR(CAM_GTIM_CH));
+    ccmr_reg &= ~(0b11 * CCMR_CCnS(CAM_GTIM_CH));
+    ccmr_reg |= (0b01 * CCMR_CCnS(CAM_GTIM_CH)); // 输入模式，IC3=>TI3
+    writel(ccmr_reg, cam->mmio_base + GTIM_CCMR(CAM_GTIM_CH));
 
-        gpio_direction_input(gpio_number); // 设置为输入模式
+    u32 ccer_reg = readl(cam->mmio_base + GTIM_CCER);
+    ccer_reg &= ~CCER_CCnP(CAM_GTIM_CH); // 上升沿触发
+    ccer_reg |= CCER_CCnE(CAM_GTIM_CH);  // 捕获使能
+    writel(ccer_reg, cam->mmio_base + GTIM_CCER);
 
-        // 读取 GPIO 状态
-        int value = gpio_get_value(gpio_number);
-        dev_info(&pdev->dev, "GPIO %d value: %d\n", gpio_number, value);
-
-        gpio_free(gpio_number); // 释放 GPIO
-    }
-
-    of_node_put(gpio_spec.np); // 释放 phandle
-
-    // 启用GTIM的捕获中断
+    u32 dier_reg = readl(cam->mmio_base + GTIM_DIER);
+    dier_reg |= DIER_CCnIE(CAM_GTIM_CH); // 中断使能
+    writel(dier_reg, cam->mmio_base + GTIM_DIER);
 
     // 中断回调 需配置 interrupts=<26>;
     // 26为GTIM的中断号
