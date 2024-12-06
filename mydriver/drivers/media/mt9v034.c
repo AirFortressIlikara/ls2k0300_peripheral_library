@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-05 08:02:57
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-05 16:41:27
+ * @LastEditTime: 2024-12-06 11:09:20
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/media/mt9v034.c
  * @Description:
  *
@@ -59,14 +59,16 @@
 #define CCMR_CCnS(n) BIT((n) % 2 * 8 + 0)
 
 /* CCER each bit */
-#define CCER_CCnE BIT(pwm->hwpwm * 4 + 0)
-#define CCER_CCnP BIT(pwm->hwpwm * 4 + 1)
+#define CCER_CCnE(n) BIT((n) * 4 + 0)
+#define CCER_CCnP(n) BIT((n) * 4 + 1)
 
 #define CAM_GTIM_CH (3 - 1)
 
 struct mt9v034_camera
 {
-    struct gpio_desc *gpio[10];
+    u32 width, height;
+    struct dma_slave_config dma_cfg;
+    struct gpio_desc *gpio[8];
     struct platform_device *gpio_pdev, *uart_pdev;
     struct dma_chan *dma_chan;
     void __iomem *mmio_base;
@@ -74,26 +76,71 @@ struct mt9v034_camera
     u32 start_gpio;
     u32 depth;
     u32 count, img_size;
-    u8 buffer[][], image[][], *it;
+    u8 *target_buffer, *dma_buffer;
 };
 
 #define GPIO_BASE 0x16104000
+#define GPIO_OEN 0x00
+#define GPIO_O 0x10
 #define GPIO_I 0x20
+#define GPIO_INT_EN 0x30
+#define GPIO_INT_POL 0x40
+#define GPIO_INT_EDGE 0x50
+#define GPIO_INT_CLR 0x60
+
 // 假设为GPIO04-11 vsync为GPIO 0
-static irqreturn_t
-mt9v034_isr(int irq, void *dev)
+static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
 {
     struct mt9v034_camera *cam = (struct mt9v034_camera *)dev;
-    *cam->it = (readl(GPIO_BASE + GPIO_I + 0x07) >> cam->start_gpio);
-    cam->it++;
-    cam->count++;
-    if (!(readl(GPIO_BASE + GPIO_I + 0x07) & BIT(0)) || cam->count > cam->img_size)
-    {
-        cam->it = cam->buffer;
-        memcpy(cam->image, cam->buffer, cam->img_size);
-    }
-    readl(cam->mmio_base + GTIM_CCR(CAM_GTIM_CH));
+    
+    u32 int_clr_reg = readl(GPIO_BASE + GPIO_INT_CLR);
+    int_clr_reg |= BIT(15); // 清中断
+    writel(int_clr_reg, GPIO_BASE + GPIO_INT_CLR);
+
+    // 传出
+
+    // 设置当前DMA传输的剩余数量，向下递减
+    dmaengine_prep_dma_cyclic(cam->dma_chan, cam->target_buffer, cam->width * cam->height, 1, DMA_DEV_TO_MEM, NULL);
+    // 使能dma
+    dma_async_issue_pending(cam->dma_chan);
+
+    // 使能tim中断
+    //...
     return IRQ_HANDLED;
+}
+
+static int dma_init(struct platform_device *pdev, struct mt9v034_camera *cam)
+{
+    // 获取DMA通道
+    cam->dma_chan = dma_request_slave_channel(&pdev->dev, "rx");
+    if (!cam->dma_chan)
+    {
+        dev_err(&pdev->dev, "Failed to request DMA channel\n");
+        return -ENOMEM;
+    }
+
+    memset(&cam->dma_cfg, 0, sizeof(&cam->dma_cfg));
+
+    // 配置DMA的源地址和目标地址
+    cam->dma_cfg.src_addr = GPIO_BASE + GPIO_I + 0x07; // 已知的并口地址 GPIO 0-7
+    cam->dma_cfg.dst_addr = cam->target_buffer;        // 图像缓存地址
+
+    // 配置Slave DMA模式
+    cam->dma_cfg.direction = DMA_DEV_TO_MEM;
+    cam->dma_cfg.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+    cam->dma_cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
+    cam->dma_cfg.src_maxburst = 4;
+    cam->dma_cfg.dst_maxburst = 4;
+
+    // 设置DMA通道为Slave模式
+    dmaengine_slave_config(cam->dma_chan, &cam->dma_cfg);
+
+    // 设置当前DMA传输的剩余数量，向下递减
+    struct dma_async_tx_descriptor *desc;
+
+    desc = dmaengine_prep_dma_cyclic(cam->dma_chan, cam->target_buffer, cam->width * cam->height, 1, DMA_DEV_TO_MEM, NULL);
+
+    return 0;
 }
 
 // data-pins = <&gpa0 4 8 GPIO_ACTIVE_HIGH>;
@@ -106,13 +153,16 @@ mt9v034_probe(struct platform_device *pdev)
 
     struct of_phandle_args data_pins_args;
     struct resource *mem;
-
     cam = devm_kzalloc(&pdev->dev, sizeof(*cam), GFP_KERNEL);
+    
     if (!cam)
     {
         dev_err(&pdev->dev, "failed to allocate memory\n");
         return -ENOMEM;
     }
+    cam->height = 480;
+    cam->width = 752;
+    cam->target_buffer = devm_kzalloc(&pdev->dev, cam->height * cam->width, GFP_KERNEL);
 
     // 获取GTIM基地址
     mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -137,7 +187,7 @@ mt9v034_probe(struct platform_device *pdev)
 
     // 获取gpio设备
     gpio_np = data_pins_args.np;
-    cam->gpio_pdev = of_find_device_by_node(gpio_np);
+    // cam->gpio_pdev = of_find_device_by_node(gpio_np);
     // cam->gpio_pdev->id
 
     cam->start_gpio = data_pins_args.args[1]; // 起始 GPIO 编号
@@ -148,54 +198,34 @@ mt9v034_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "GPIO out of range\n");
         return -EINVAL;
     }
-
+    u32 oen_reg;
     // 设置gpio为输入
-    for (u32 i = 0; i < cam->depth; ++i)
-    {
-        cam->gpio[i] = gpiod_get_index(gpio_np, NULL, 1, GPIOD_IN);
-        if (IS_ERR(cam->gpio[i]))
-        {
-            dev_err("Failed to get GPIO %d", i);
-        }
-    }
+    // for (u32 i = 0; i < cam->depth; ++i)
+    // {
+    //     cam->gpio[i] = gpiod_get_index(gpio_np, NULL, 1, GPIOD_IN);
+    //     if (IS_ERR(cam->gpio[i]))
+    //     {
+    //         dev_err(&pdev->dev, "Failed to get GPIO %d\n", i);
+    //     }
+    // }
+    oen_reg = readl(GPIO_BASE + GPIO_OEN);
+    oen_reg |= 0b11111111; // GPIO00-07设置为输入
+    writel(oen_reg, GPIO_BASE + GPIO_OEN);
 
     uart_np = of_parse_phandle(np, "uart", 0);
-    cam->uart_pdev = of_find_device_by_node(uart_np);
-    struct uart_port *port = platform_get_drvdata(cam->uart_pdev);
+    // cam->uart_pdev = of_find_device_by_node(uart_np);
+    // struct uart_port *port = platform_get_drvdata(cam->uart_pdev);
 
-    // 配置波特率
+    // // 配置波特率
     // uart_set_options(port, NULL, 9600, 'n', 8, 0);
 
     // uart_write(port, (u_char *));
-    dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n", start_gpio, ngpios);
+    dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n", cam->start_gpio, cam->depth);
 
-    // DMA初始化
-    cam->dma_chan = dma_request_slave_channel(&pdev->dev, "CAM_PCLK");
-    if (!dma_chan)
-    {
-        dev_err(&pdev->dev, "Failed to request DMA channel\n");
-        return -ENODEV;
-    }
-    struct dma_slave_config config = {
-        .direction = DMA_FROM_DEVICE,                // 或者 DMA_TO_DEVICE
-        .src_addr = GPIO_BASE + GPIO_I + 0x07,       // 使用GPIO00-07
-        .dst_addr = cam->buffer,                     // 目标地址
-        .src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE, // 源地址宽度
-        .dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE, // 目标地址宽度
-        .src_maxburst = 16,                          // 源端最大突发长度
-        .dst_maxburst = 16,                          // 目标端最大突发长度
-        .device_fc = false,                          // 是否启用流控
-        .slave_id = 0,                               // 如果需要指定从设备ID
-    };
-    if (dmaengine_slave_config(cam->dma_chan, &config))
-    {
-        dev_err(dev, "Failed to configure DMA channel\n");
-        return -EINVAL;
-    }
-    struct scatterlist sg;
-    sg_init_table
+    // 初始化DMA
+    dma_init(pdev, cam);
 
-    // 为PCLK启用GTIM_CH3的捕获中断，通道号定义在CAM_GTIM_CH
+    // 为PCLK启用GTIM_CH3的捕获中断DMA请求，通道号定义在CAM_GTIM_CH
 
     u32 ccmr_reg = readl(cam->mmio_base + GTIM_CCMR(CAM_GTIM_CH));
     ccmr_reg &= ~(0b11 * CCMR_CCnS(CAM_GTIM_CH));
@@ -208,13 +238,25 @@ mt9v034_probe(struct platform_device *pdev)
     writel(ccer_reg, cam->mmio_base + GTIM_CCER);
 
     u32 dier_reg = readl(cam->mmio_base + GTIM_DIER);
-    dier_reg |= DIER_CCnIE(CAM_GTIM_CH); // 中断使能
+    dier_reg |= DIER_CCnDE(CAM_GTIM_CH); // DMA请求使能
     writel(dier_reg, cam->mmio_base + GTIM_DIER);
 
     // 为Vsync启用GPIO中断 下降沿触发
+    oen_reg = readl(GPIO_BASE + GPIO_OEN);
+    oen_reg |= BIT(15); // 输入
+    writel(oen_reg, GPIO_BASE + GPIO_OEN);
+    u32 int_pol_reg = readl(GPIO_BASE + GPIO_INT_POL);
+    int_pol_reg &= ~BIT(15); // 下降沿中断
+    writel(int_pol_reg, GPIO_BASE + GPIO_INT_POL);
+    u32 int_edge_reg = readl(GPIO_BASE + GPIO_INT_EDGE);
+    int_edge_reg |= BIT(15); // 边沿触发
+    writel(int_edge_reg, GPIO_BASE + GPIO_INT_EDGE);
+    u32 int_en_reg = readl(GPIO_BASE + GPIO_INT_EN);
+    int_en_reg |= BIT(15); // 使能中断
+    writel(int_en_reg, GPIO_BASE + GPIO_INT_EN);
+    // 53为GPIO00-15的中断号，假设使用gpio15中断
 
-    // 配置中断回调 需配置 interrupts=<26>;
-    // 26为GTIM的中断号
+    // 配置中断回调 需配置 interrupts=<53>;
     cam->irq = platform_get_irq(pdev, 0);
     if (cam->irq <= 0)
     {
@@ -222,7 +264,7 @@ mt9v034_probe(struct platform_device *pdev)
         return -ENODEV;
     }
 
-    err = request_irq(cam->irq, mt9v034_isr, IRQF_TRIGGER_RISING, "camera_interrupts", cam); // 不确定
+    u32 err = request_irq(cam->irq, mt9v034_vsync_isr, IRQF_TRIGGER_RISING, "camera_interrupts", cam); // 不确定
 
     if (err)
         dev_err(&pdev->dev, "failure requesting irq %d\n", err);
