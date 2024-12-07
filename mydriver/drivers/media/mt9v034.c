@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-05 08:02:57
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-06 13:23:06
+ * @LastEditTime: 2024-12-07 07:42:04
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/media/mt9v034.c
  * @Description:
  *
@@ -75,6 +75,8 @@ struct mt9v034_camera
     struct gpio_desc *gpio[8];
     struct platform_device *gpio_pdev, *uart_pdev;
     struct dma_chan *dma_chan;
+    struct class *img_class;
+    struct device *img_device;
     void __iomem *gtim_mmio_base, *gpio_mmio_base;
     u32 irq;
     u32 start_gpio;
@@ -82,7 +84,10 @@ struct mt9v034_camera
     u32 count, img_size;
     u8 *target_buffer;
     dma_addr_t dma_handle;
+    u32 major;
 };
+u8 *mt9v034_image;
+u32 mt9v034_height, mt9v034_width;
 
 #define GPIO_BASE 0x16104000
 #define GPIO_OEN(n) (0x00 + (n) / 8 * 0x01)
@@ -93,7 +98,7 @@ struct mt9v034_camera
 #define GPIO_INT_EDGE(n) (0x50 + (n) / 8 * 0x01)
 #define GPIO_INT_CLR(n) (0x60 + (n) / 8 * 0x01)
 
-// 假设为GPIO04-11 vsync为GPIO 0
+// 假设为GPIO00-07 vsync为GPIO 8
 static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
 {
     struct mt9v034_camera *cam = (struct mt9v034_camera *)dev;
@@ -104,9 +109,12 @@ static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
     writeb(int_clr_reg, cam->gpio_mmio_base + GPIO_INT_CLR(0));
 
     // 传出
+    memcpy(mt9v034_image, cam->target_buffer, cam->width * cam->height);
 
     // 设置当前DMA传输的剩余数量，向下递减
-    dmaengine_prep_dma_cyclic(cam->dma_chan, (dma_addr_t)cam->target_buffer, cam->width * cam->height, 1, DMA_DEV_TO_MEM, 0);
+    dmaengine_prep_dma_cyclic(cam->dma_chan, (dma_addr_t)cam->target_buffer,
+                              cam->width * cam->height, 1, DMA_DEV_TO_MEM,
+                              0);
     // 使能dma
     dma_async_issue_pending(cam->dma_chan);
 
@@ -129,8 +137,9 @@ static int dma_init(struct platform_device *pdev, struct mt9v034_camera *cam)
     memset(&cam->dma_cfg, 0, sizeof(&cam->dma_cfg));
 
     // 配置DMA的源地址和目标地址
-    cam->dma_cfg.src_addr = cam->gpio_mmio_base + GPIO_I(0); // 已知的并口地址 GPIO 0-7
-    cam->dma_cfg.dst_addr = cam->dma_handle;              // 图像缓存地址
+    cam->dma_cfg.src_addr =
+        (dma_addr_t)GPIO_BASE + GPIO_I(0);   // 已知的并口地址 GPIO 0-7
+    cam->dma_cfg.dst_addr = cam->dma_handle; // 图像缓存地址
 
     // 配置Slave DMA模式
     cam->dma_cfg.direction = DMA_DEV_TO_MEM;
@@ -144,8 +153,87 @@ static int dma_init(struct platform_device *pdev, struct mt9v034_camera *cam)
 
     // 设置当前DMA传输的剩余数量，向下递减
 
-    desc = dmaengine_prep_dma_cyclic(cam->dma_chan, cam->target_buffer, cam->width * cam->height, 1, DMA_DEV_TO_MEM, 0);
+    desc = dmaengine_prep_dma_cyclic(cam->dma_chan, cam->dma_handle,
+                                     cam->width * cam->height, 1,
+                                     DMA_DEV_TO_MEM, 0);
 
+    return 0;
+}
+
+static ssize_t mt9v034_file_read(struct file *flip, char __user *buf,
+                                 size_t count, loff_t *f_pos)
+{
+    // struct mt9v034_camera *cam = flip->private_data;
+    u32 image_size = mt9v034_height * mt9v034_width;
+
+    if (*f_pos > count)
+        return 0;
+    if (count > image_size - *f_pos)
+        count = image_size - *f_pos;
+
+    if (*f_pos >= image_size || count == 0)
+        return 0; // End of file
+
+    if (copy_to_user(buf, mt9v034_image + *f_pos, count))
+        return -EFAULT;
+
+    *f_pos += count;
+    return count;
+}
+
+// static int mt9v034_file_open(struct inode *inode, struct file *filp)
+// {
+// 	struct platform_device *pdev;
+// 	struct mt9v034_camera *cam;
+
+// 	pdev = container_of(&inode->i_cdev->dev, struct platform_device, dev);
+// 	cam = platform_get_drvdata(pdev);
+
+// 	// 将my_device结构指针赋值给file的private_data
+// 	filp->private_data = cam;
+
+// 	return 0;
+// }
+
+static const struct file_operations fops = {
+    .owner = THIS_MODULE,
+    .read = mt9v034_file_read,
+    // .open = mt9v034_file_open,
+};
+
+static int mt9v034_class_init(struct platform_device *pdev,
+                              struct mt9v034_camera *cam)
+{
+#define MT9V034_DEVICE_NAME "test_mt9v034"
+#define MT9V034_CLASS_NAME "test_mt9v034_class"
+    cam->img_class = NULL;
+    cam->img_device = NULL;
+
+    cam->major = register_chrdev(0, MT9V034_DEVICE_NAME, &fops);
+    if (cam->major < 0)
+    {
+        dev_err(&pdev->dev, "failed to register_chrdev\n");
+        return cam->major;
+    }
+
+    cam->img_class = class_create(THIS_MODULE, MT9V034_CLASS_NAME);
+    if (IS_ERR(cam->img_class))
+    {
+        unregister_chrdev(cam->major, MT9V034_DEVICE_NAME);
+        return PTR_ERR(cam->img_class);
+    }
+
+    cam->img_device =
+        device_create(cam->img_class, NULL, MKDEV(cam->major, 0), NULL,
+                      MT9V034_DEVICE_NAME);
+    if (IS_ERR(cam->img_device))
+    {
+        class_destroy(cam->img_class);
+        unregister_chrdev(cam->major, MT9V034_DEVICE_NAME);
+        return PTR_ERR(cam->img_device);
+    }
+
+    dev_info(&pdev->dev, "MT9V034: loaded on major %d\n", cam->major);
     return 0;
 }
 
@@ -176,9 +264,13 @@ static int mt9v034_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "failed to allocate memory\n");
         return -ENOMEM;
     }
-    cam->height = 480;
-    cam->width = 752;
-    cam->target_buffer = dma_alloc_coherent(&pdev->dev, cam->height * cam->width, &cam->dma_handle, GFP_KERNEL);
+    cam->height = mt9v034_height = 120;
+    cam->width = mt9v034_width = 188;
+    cam->target_buffer =
+        dma_alloc_coherent(&pdev->dev, cam->height * cam->width,
+                           &cam->dma_handle, GFP_KERNEL);
+    mt9v034_image =
+        devm_kzalloc(&pdev->dev, cam->height * cam->width, GFP_KERNEL);
     // cam->target_buffer = devm_kzalloc(&pdev->dev, cam->height * cam->width, GFP_KERNEL);
 
     // 获取GTIM基地址
@@ -204,7 +296,8 @@ static int mt9v034_probe(struct platform_device *pdev)
     }
 
     // 获取 GPIO 范围
-    if (of_parse_phandle_with_fixed_args(np, "data-pins", 4, 0, &data_pins_args) < 0)
+    if (of_parse_phandle_with_fixed_args(np, "data-pins", 4, 0,
+                                         &data_pins_args) < 0)
     {
         dev_err(&pdev->dev, "Failed to parse data-pins\n");
         return -EINVAL;
@@ -244,7 +337,8 @@ static int mt9v034_probe(struct platform_device *pdev)
     // uart_set_options(port, NULL, 9600, 'n', 8, 0);
 
     // uart_write(port, (u_char *));
-    dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n", cam->start_gpio, cam->depth);
+    dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n",
+             cam->start_gpio, cam->depth);
 
     // 初始化DMA
     dma_init(pdev, cam);
@@ -291,11 +385,16 @@ static int mt9v034_probe(struct platform_device *pdev)
         return -ENODEV;
     }
 
-    err = request_irq(cam->irq, mt9v034_vsync_isr, IRQF_TRIGGER_RISING, "camera_interrupts", cam); // 不确定
+    err = request_irq(cam->irq, mt9v034_vsync_isr, IRQF_TRIGGER_RISING,
+                      "camera_interrupts", cam); // 不确定
 
     if (err)
         dev_err(&pdev->dev, "failure requesting irq %d\n", err);
 
+    // 初始化字符设备
+    mt9v034_class_init(pdev, cam);
+
+    platform_set_drvdata(pdev, cam);
     return 0;
 }
 
@@ -306,6 +405,10 @@ static int mt9v034_remove(struct platform_device *pdev)
     if (!cam)
         return -ENODEV;
 
+    // 注销字符设备
+    device_destroy(cam->img_device);
+    class_destroy(cam->img_class);
+    unregister_chrdev(cam->major, MT9V034_DEVICE_NAME);
     //...
 
     if (err < 0)
