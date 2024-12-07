@@ -2,11 +2,11 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-05 08:02:57
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-07 08:33:32
+ * @LastEditTime: 2024-12-07 16:07:09
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/media/mt9v034.c
  * @Description:
  *
- * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
+ * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
  */
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -22,6 +22,7 @@
 #include <linux/tty.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
+#include <linux/of_dma.h>
 #include <linux/slab.h>
 
 /* counter offest */
@@ -104,6 +105,7 @@ static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
     struct mt9v034_camera *cam = (struct mt9v034_camera *)dev;
 
     u8 int_clr_reg;
+    u32 dier_reg;
     int_clr_reg = readb(cam->gpio_mmio_base + GPIO_INT_CLR(0));
     int_clr_reg |= BIT(15); // 清中断
     writeb(int_clr_reg, cam->gpio_mmio_base + GPIO_INT_CLR(0));
@@ -122,7 +124,9 @@ static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
     dma_async_issue_pending(cam->dma_chan);
 
     // 使能tim中断
-    //...
+    dier_reg = readl(cam->gtim_mmio_base + GTIM_DIER);
+    dier_reg |= DIER_CCnDE(CAM_GTIM_CH); // DMA请求使能
+    writel(dier_reg, cam->gtim_mmio_base + GTIM_DIER);
     return IRQ_HANDLED;
 }
 
@@ -131,6 +135,7 @@ static int dma_init(struct platform_device *pdev, struct mt9v034_camera *cam)
     struct dma_async_tx_descriptor *desc;
     // 获取DMA通道
     cam->dma_chan = dma_request_slave_channel(&pdev->dev, "rx");
+    dev_info(&pdev->dev, "dma_request returned %d", cam->dma_chan);
     if (!cam->dma_chan)
     {
         dev_err(&pdev->dev, "Failed to request DMA channel\n");
@@ -261,7 +266,6 @@ static int mt9v034_probe(struct platform_device *pdev)
     u8 int_en_reg;
     u32 ccmr_reg;
     u32 ccer_reg;
-    u32 dier_reg;
 
     cam = devm_kzalloc(&pdev->dev, sizeof(*cam), GFP_KERNEL);
 
@@ -280,13 +284,17 @@ static int mt9v034_probe(struct platform_device *pdev)
     // cam->target_buffer = devm_kzalloc(&pdev->dev, cam->height * cam->width, GFP_KERNEL);
 
     // 获取GTIM基地址
-    mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-    if (!mem)
-    {
-        dev_err(&pdev->dev, "no mem resource?\n");
-        return -ENODEV;
-    }
-    cam->gtim_mmio_base = devm_ioremap_resource(&pdev->dev, mem);
+    // mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+    // if (!mem) {
+    // 	dev_err(&pdev->dev, "no mem resource?\n");
+    // 	return -ENODEV;
+    // }
+    // cam->gtim_mmio_base = devm_ioremap_resource(&pdev->dev, mem);
+    // if (!cam->gtim_mmio_base) {
+    // 	dev_err(&pdev->dev, "gtim mmio_base is null\n");
+    // 	return -ENOMEM;
+    // }
+    cam->gtim_mmio_base = devm_ioremap(&pdev->dev, 0x16119000, 0x1000);
     if (!cam->gtim_mmio_base)
     {
         dev_err(&pdev->dev, "gtim mmio_base is null\n");
@@ -301,27 +309,25 @@ static int mt9v034_probe(struct platform_device *pdev)
         return -ENOMEM;
     }
 
-    // 获取 GPIO 范围
-    if (of_parse_phandle_with_fixed_args(np, "data-pins", 4, 0,
-                                         &data_pins_args) < 0)
-    {
-        dev_err(&pdev->dev, "Failed to parse data-pins\n");
-        return -EINVAL;
-    }
+    // // 获取 GPIO 范围
+    // if (of_parse_phandle_with_fixed_args(np, "data-pins", 4, 0,
+    // 				     &data_pins_args) < 0) {
+    // 	dev_err(&pdev->dev, "Failed to parse data-pins\n");
+    // 	return -EINVAL;
+    // }
 
     // 获取gpio设备
-    gpio_np = data_pins_args.np;
+    // gpio_np = data_pins_args.np;
     // cam->gpio_pdev = of_find_device_by_node(gpio_np);
     // cam->gpio_pdev->id
 
-    cam->start_gpio = data_pins_args.args[1]; // 起始 GPIO 编号
-    cam->depth = data_pins_args.args[2];      // GPIO 数量
+    // cam->start_gpio = data_pins_args.args[1]; // 起始 GPIO 编号
+    // cam->depth = data_pins_args.args[2]; // GPIO 数量
 
-    if (cam->start_gpio + cam->depth > 16)
-    {
-        dev_err(&pdev->dev, "GPIO out of range\n");
-        return -EINVAL;
-    }
+    // if (cam->start_gpio + cam->depth > 16) {
+    // 	dev_err(&pdev->dev, "GPIO out of range\n");
+    // 	return -EINVAL;
+    // }
     // 设置gpio为输入
     // for (u32 i = 0; i < cam->depth; ++i)
     // {
@@ -343,11 +349,15 @@ static int mt9v034_probe(struct platform_device *pdev)
     // uart_set_options(port, NULL, 9600, 'n', 8, 0);
 
     // uart_write(port, (u_char *));
-    dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n",
-             cam->start_gpio, cam->depth);
+    // dev_info(&pdev->dev, "GPIO range: start=%d, count=%d\n",
+    // 	 cam->start_gpio, cam->depth);
 
     // 初始化DMA
-    dma_init(pdev, cam);
+    err = dma_init(pdev, cam);
+    if (err != 0)
+    {
+        return err;
+    }
 
     // 为PCLK启用GTIM_CH3的捕获中断DMA请求，通道号定义在CAM_GTIM_CH
 
@@ -360,10 +370,6 @@ static int mt9v034_probe(struct platform_device *pdev)
     ccer_reg &= ~CCER_CCnP(CAM_GTIM_CH); // 上升沿触发
     ccer_reg |= CCER_CCnE(CAM_GTIM_CH);  // 捕获使能
     writel(ccer_reg, cam->gtim_mmio_base + GTIM_CCER);
-
-    dier_reg = readl(cam->gtim_mmio_base + GTIM_DIER);
-    dier_reg |= DIER_CCnDE(CAM_GTIM_CH); // DMA请求使能
-    writel(dier_reg, cam->gtim_mmio_base + GTIM_DIER);
 
     // 为Vsync启用GPIO中断 下降沿触发
     oen_reg = readb(cam->gpio_mmio_base + GPIO_OEN(15));
@@ -412,7 +418,7 @@ static int mt9v034_remove(struct platform_device *pdev)
         return -ENODEV;
 
     // 注销字符设备
-    device_destroy(cam->img_device);
+    device_destroy(cam->img_class, MKDEV(cam->major, 0));
     class_destroy(cam->img_class);
     unregister_chrdev(cam->major, MT9V034_DEVICE_NAME);
     //...
