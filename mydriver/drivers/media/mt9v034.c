@@ -2,11 +2,11 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-05 08:02:57
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-07 07:42:04
+ * @LastEditTime: 2024-12-07 08:33:32
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/media/mt9v034.c
  * @Description:
  *
- * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
+ * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
  */
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -108,6 +108,9 @@ static irqreturn_t mt9v034_vsync_isr(int irq, void *dev)
     int_clr_reg |= BIT(15); // 清中断
     writeb(int_clr_reg, cam->gpio_mmio_base + GPIO_INT_CLR(0));
 
+    // 关闭dma
+    dmaengine_terminate_sync(cam->dma_chan);
+
     // 传出
     memcpy(mt9v034_image, cam->target_buffer, cam->width * cam->height);
 
@@ -147,6 +150,9 @@ static int dma_init(struct platform_device *pdev, struct mt9v034_camera *cam)
     cam->dma_cfg.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
     cam->dma_cfg.src_maxburst = 4;
     cam->dma_cfg.dst_maxburst = 4;
+
+    // 关闭dma
+    dmaengine_terminate_sync(cam->dma_chan);
 
     // 设置DMA通道为Slave模式
     dmaengine_slave_config(cam->dma_chan, &cam->dma_cfg);
