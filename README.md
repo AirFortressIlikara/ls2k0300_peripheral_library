@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-03 10:07:52
+ * @LastEditTime: 2024-12-10 14:58:54
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -15,6 +15,7 @@
 - 交叉编译OpenCV https://www.bilibili.com/video/BV1Q2zbYrEvS/
 - GTIM驱动编译与安装 https://www.bilibili.com/video/BV1Ddi2YmESo/
 - 在设备树中加入SPI1的屏幕节点 https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142
+- 救砖教程：局域网tftp加载内核开机 https://www.bilibili.com/video/BV1hvqJY3EWu/
 
 后续会有更多视频教程发布。
 
@@ -34,6 +35,7 @@
 开发计划
 - 提供更多TIM驱动程序
 - 迁移到RUST
+- 更新LCD排线引脚复用信息
 
 本仓库持续更新中
 
@@ -63,4 +65,5 @@
 **注意**
 - 16、18号引脚与LCD屏幕的触控共用，不建议使用；
 - 4、6号引脚对应UART0，为默认调试引脚，不建议使用；
-- 6、10、14号引脚只能输入，不能输出
+- 6、10、14号引脚只能输入，不能输出；
+- LCD排线的LCD_D\[6:0\](GPIO04-10)为芯片初始化信号，不建议使用
