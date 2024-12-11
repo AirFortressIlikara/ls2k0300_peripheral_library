@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-10 14:58:54
+ * @LastEditTime: 2024-12-11 07:22:05
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -67,3 +67,30 @@
 - 4、6号引脚对应UART0，为默认调试引脚，不建议使用；
 - 6、10、14号引脚只能输入，不能输出；
 - LCD排线的LCD_D\[6:0\](GPIO04-10)为芯片初始化信号，不建议使用
+
+## 2K0300 CoreMark 跑分
+
+编译命令：
+```
+make CC=loongarch64-linux-gnu-gcc link
+```
+运行结果：
+```
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 16488
+Total time (secs): 16.488000
+Iterations/Sec   : 3639.010189
+Iterations       : 60000
+Compiler version : GCC8.3.0
+Compiler flags   : -O2   -lrt
+Memory location  : Please put data memory location here
+			(e.g. code in flash, data on heap etc)
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0xbd59
+Correct operation validated. See README.md for run and reporting rules.
+CoreMark 1.0 : 3639.010189 / GCC8.3.0 -O2   -lrt / Heap
+```
