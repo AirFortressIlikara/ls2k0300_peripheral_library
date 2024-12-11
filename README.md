@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-11 11:18:35
+ * @LastEditTime: 2024-12-11 15:36:31
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -67,6 +67,38 @@
 - 4、6号引脚对应UART0，为默认调试引脚，不建议使用；
 - 6、10、14号引脚只能输入，不能输出；
 - LCD排线的LCD_D\[6:0\](GPIO04-10)为芯片初始化信号，不建议使用
+
+## 久久派LCD引脚功能复用表
+|引脚号|GPIO复用|主功能复用|第一复用|第二复用|引脚号|GPIO复用|主功能复用|第一复用|第二复用|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|1|NC||||2|NC||||
+|3|NC||||4|NC||||
+|5|GND||||6|GPIO54|I2C_SCL3|||
+|7|GPIO49|I2C_SDA0|||8|GPIO48|I2C_SCL0|||
+|9|NC||||10|NC||||
+|11|NC||||12|NC||||
+|13|GPIO52|I2C_SCL2|||14|GPIO53|I2C_SDA2|||
+|15|GND||||16|GPIO04|lcd_dat_b[0]|||
+|17|GPIO05|lcd_dat_b[1]|||18|GPIO06|lcd_dat_b[2]|||
+|19|GPIO07|lcd_dat_b[3]|||20|GPIO08|lcd_dat_b[4]|||
+|21|GPIO09|lcd_dat_b[5]|||22|GPIO10|lcd_dat_b[6]|||
+|23|GPIO11|lcd_dat_b[7]|||24|GND||||
+|25|GPIO12|lcd_dat_g[0]|||26|GPIO13|lcd_dat_g[1]|||
+|27|GPIO14|lcd_dat_g[2]|||28|GPIO15|lcd_dat_g[3]|||
+|29|GPIO16|lcd_dat_g[4]|||30|GPIO17|lcd_dat_g[5]|||
+|31|GPIO18|lcd_dat_g[6]|||32|GPIO19|lcd_dat_g[7]|||
+|33|GND||||34|GPIO20|lcd_dat_r[0]|||
+|35|GPIO21|lcd_dat_r[1]|||36|GPIO22|lcd_dat_r[2]|||
+|37|GPIO23|lcd_dat_r[3]|||38|GPIO24|lcd_dat_r[4]|||
+|39|GPIO25|lcd_dat_r[5]|||40|GPIO26|lcd_dat_r[6]|||
+|41|GPIO27|lcd_dat_r[7]|||42|GND||||
+|43|GPIO02|lcd_hsync|||44|GPIO01|lcd_vsync|||
+|45|GPIO03|lcd_en|||46|GND||||
+|47|GPIO00|lcd_clk|||48|GND||||
+|49|GPIO86|TIM1_CH3N||PWM0|50|P5V||||
+|51|P5V||||52|P5V||||
+|53|P5V||||54|P5V||||
+
 
 ## 设备树部分修改教程
 
