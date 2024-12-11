@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-11 07:22:05
+ * @LastEditTime: 2024-12-11 11:18:35
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -67,6 +67,18 @@
 - 4、6号引脚对应UART0，为默认调试引脚，不建议使用；
 - 6、10、14号引脚只能输入，不能输出；
 - LCD排线的LCD_D\[6:0\](GPIO04-10)为芯片初始化信号，不建议使用
+
+## 设备树部分修改教程
+
+这里假设你使用的是久久派wifi版
+>arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dts
+
+- 修改形如 **pinctrl-0 = <&i2c0_mux_m0>;** 的部分以配置GPIO复用配置
+- 修改形如 **status = "okay";** 的部分以使能某功能
+
+>arch/loongarch/boot/dts/loongson/2k0300-pinctrl.dtsi
+
+- 查询复用配置对应的引脚号和功能号
 
 ## 2K0300 CoreMark 跑分
 
