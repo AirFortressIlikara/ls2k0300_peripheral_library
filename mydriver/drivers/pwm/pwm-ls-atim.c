@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-05 13:23:55
+ * @LastEditTime: 2024-12-12 09:11:50
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-atim.c
  * @Description:
  *
@@ -25,19 +25,21 @@
 #include <linux/slab.h>
 
 /* counter offest */
-#define GTIM_CR1 0x00
-#define GTIM_CR2 0x04
-#define GTIM_SMCR 0x08
-#define GTIM_DIER 0x0C
-#define GTIM_SR 0x10
-#define GTIM_EGR 0x14
-#define GTIM_CCMR(n) 0x18 + ((n) / 2) * 0x04
-#define GTIM_CCER 0x20
-#define GTIM_CNT 0x24
-#define GTIM_PSC 0x28
-#define GTIM_ARR 0x2C
-#define GTIM_CCR(n) 0x34 + (n) * 0x04
-#define GTIM_INSTA 0x50
+#define ATIM_CR1 0x00
+#define ATIM_CR2 0x04
+#define ATIM_SMCR 0x08
+#define ATIM_DIER 0x0C
+#define ATIM_SR 0x10
+#define ATIM_EGR 0x14
+#define ATIM_CCMR(n) 0x18 + (((n) % 4) / 2) * 0x04
+#define ATIM_CCER 0x20
+#define ATIM_CNT 0x24
+#define ATIM_PSC 0x28
+#define ATIM_ARR 0x2C
+#define ATIM_RCR 0x30
+#define ATIM_CCR(n) 0x34 + ((n) % 4) * 0x04
+#define ATIM_BDTR 0x44
+#define ATIM_INSTA 0x50
 
 /* CR1 each bit */
 #define CR1_CEN BIT(0)
@@ -53,14 +55,17 @@
 #define CCMR_OCnCE(n) BIT((n) % 2 * 8 + 7)
 
 /* CCER each bit */
-#define CCER_CCnE(n) BIT((n) * 4 + 0)
-#define CCER_CCnP(n) BIT((n) * 4 + 1)
+#define CCER_CCnE(n) BIT(((n) % 4) * 4 + 0 + ((n) / 4) * 2)
+#define CCER_CCnP(n) BIT(((n) % 4) * 4 + 1 + ((n) / 4) * 2)
 
-#define to_ls_pwm_gtim_chip(_chip) container_of(_chip, struct ls_pwm_gtim_chip, chip)
+/* BDTR each bit */
+#define BDTR_MOE BIT(15)
+
+#define to_ls_pwm_atim_chip(_chip) container_of(_chip, struct ls_pwm_atim_chip, chip)
 #define NS_IN_HZ (1000000000UL)
 #define CPU_FRQ_PWM (50000000UL)
 
-struct ls_pwm_gtim_chip
+struct ls_pwm_atim_chip
 {
 	struct pwm_chip chip;
 	void __iomem *mmio_base;
@@ -72,14 +77,14 @@ struct ls_pwm_gtim_chip
 	u64 clock_frequency;
 };
 
-static int ls_pwm_gtim_set_polarity(struct pwm_chip *chip,
+static int ls_pwm_atim_set_polarity(struct pwm_chip *chip,
 									struct pwm_device *pwm,
 									enum pwm_polarity polarity)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
+	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	u16 val;
 
-	val = readl(ls_pwm->mmio_base + GTIM_CCER);
+	val = readl(ls_pwm->mmio_base + ATIM_CCER);
 	switch (polarity)
 	{
 	case PWM_POLARITY_NORMAL:
@@ -91,62 +96,62 @@ static int ls_pwm_gtim_set_polarity(struct pwm_chip *chip,
 	default:
 		break;
 	}
-	writel(val, ls_pwm->mmio_base + GTIM_CCER);
+	writel(val, ls_pwm->mmio_base + ATIM_CCER);
 	return 0;
 }
 
-static void ls_pwm_gtim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
+static void ls_pwm_atim_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
+	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	u32 cr1_reg, ccmr_reg;
 
 	if (pwm->state.polarity == PWM_POLARITY_NORMAL)
-		writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
+		writel(ls_pwm->arr_reg, ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
 	else if (pwm->state.polarity == PWM_POLARITY_INVERSED)
-		writel(0, ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
+		writel(0, ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
 
-	ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+	ccmr_reg = readl(ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 	ccmr_reg &= ~(0b111 * CCMR_OCnM(pwm->hwpwm));
-	writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+	writel(ccmr_reg, ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 
 	ls_pwm->en_mark &= ~BIT(pwm->hwpwm);
 	if (ls_pwm->en_mark == 0b0000)
 	{
-		cr1_reg = readl(ls_pwm->mmio_base + GTIM_CR1);
+		cr1_reg = readl(ls_pwm->mmio_base + ATIM_CR1);
 		cr1_reg &= ~CR1_CEN;
-		writel(cr1_reg, ls_pwm->mmio_base + GTIM_CR1);
-		writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
+		writel(cr1_reg, ls_pwm->mmio_base + ATIM_CR1);
+		writel(0x0, ls_pwm->mmio_base + ATIM_CNT);
 	}
 }
 
-static int ls_pwm_gtim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
+static int ls_pwm_atim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
+	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	int ret;
 	u32 cr1_reg;
 
-	writel(ls_pwm->ccr_reg[pwm->hwpwm], ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
-	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
+	writel(ls_pwm->ccr_reg[pwm->hwpwm % 4], ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
+	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + ATIM_ARR);
 
-	ret = readl(ls_pwm->mmio_base + GTIM_CCER);
+	ret = readl(ls_pwm->mmio_base + ATIM_CCER);
 	ret |= CCER_CCnE(pwm->hwpwm);
-	writel(ret, ls_pwm->mmio_base + GTIM_CCER);
+	writel(ret, ls_pwm->mmio_base + ATIM_CCER);
 
 	if (ls_pwm->en_mark == 0b0000)
 	{
-		writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
-		cr1_reg = readl(ls_pwm->mmio_base + GTIM_CR1);
+		writel(0x0, ls_pwm->mmio_base + ATIM_CNT);
+		cr1_reg = readl(ls_pwm->mmio_base + ATIM_CR1);
 		cr1_reg |= CR1_CEN;
-		writel(cr1_reg, ls_pwm->mmio_base + GTIM_CR1);
+		writel(cr1_reg, ls_pwm->mmio_base + ATIM_CR1);
 	}
 	ls_pwm->en_mark |= BIT(pwm->hwpwm);
 	return 0;
 }
 
-static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
+static int ls_pwm_atim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 							  int duty_ns, int period_ns)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
+	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	unsigned int arr_reg, ccr_reg;
 	unsigned long long val0, val1;
 	u32 ccmr_reg;
@@ -161,23 +166,23 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 
 	if (duty_ns == 0)
 	{
-		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		ccmr_reg = readl(ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 		ccmr_reg &= ~(0b111 * CCMR_OCnM(pwm->hwpwm));
 		ccmr_reg |= 0b101 * CCMR_OCnM(pwm->hwpwm);
-		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		writel(ccmr_reg, ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 	}
 	else if (period_ns == duty_ns)
 	{
-		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		ccmr_reg = readl(ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 		ccmr_reg &= ~(0b111 * CCMR_OCnM(pwm->hwpwm));
 		ccmr_reg |= 0b100 * CCMR_OCnM(pwm->hwpwm);
-		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		writel(ccmr_reg, ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 	}
 	else
 	{
-		ccmr_reg = readl(ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		ccmr_reg = readl(ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 		ccmr_reg |= 0b111 * CCMR_OCnM(pwm->hwpwm);
-		writel(ccmr_reg, ls_pwm->mmio_base + GTIM_CCMR(pwm->hwpwm));
+		writel(ccmr_reg, ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 	}
 
 	val0 = ls_pwm->clock_frequency * period_ns;
@@ -188,16 +193,16 @@ static int ls_pwm_gtim_config(struct pwm_chip *chip, struct pwm_device *pwm,
 	do_div(val1, NSEC_PER_SEC);
 	ccr_reg = val1 < 1 ? 1 : val1;
 
-	writel(ccr_reg, ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
-	writel(arr_reg, ls_pwm->mmio_base + GTIM_ARR);
-	writel(0x0, ls_pwm->mmio_base + GTIM_CNT);
+	writel(ccr_reg, ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
+	writel(arr_reg, ls_pwm->mmio_base + ATIM_ARR);
+	writel(0x0, ls_pwm->mmio_base + ATIM_CNT);
 
 	ls_pwm->arr_reg = arr_reg;
-	ls_pwm->ccr_reg[pwm->hwpwm] = ccr_reg;
+	ls_pwm->ccr_reg[pwm->hwpwm % 4] = ccr_reg;
 	return 0;
 }
 
-static unsigned int ls_pwm_gtim_reg_to_ns(struct ls_pwm_gtim_chip *ls_pwm, unsigned int reg)
+static unsigned int ls_pwm_atim_reg_to_ns(struct ls_pwm_atim_chip *ls_pwm, unsigned int reg)
 {
 	unsigned long long val;
 
@@ -206,23 +211,23 @@ static unsigned int ls_pwm_gtim_reg_to_ns(struct ls_pwm_gtim_chip *ls_pwm, unsig
 	return val;
 }
 
-void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
+void ls_pwm_atim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 						   struct pwm_state *state)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = to_ls_pwm_gtim_chip(chip);
+	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	unsigned int arr_reg, ccr_reg;
 	u32 ccer_reg;
 
 	/*
 	 * period_ns = arr_reg *NSEC_PER_SEC /ls_pwm->clock_frequency.
 	 */
-	arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
-	state->period = ls_pwm_gtim_reg_to_ns(ls_pwm, arr_reg);
+	arr_reg = readl(ls_pwm->mmio_base + ATIM_ARR);
+	state->period = ls_pwm_atim_reg_to_ns(ls_pwm, arr_reg);
 
-	ccr_reg = readl(ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
-	state->duty_cycle = ls_pwm_gtim_reg_to_ns(ls_pwm, ccr_reg);
+	ccr_reg = readl(ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
+	state->duty_cycle = ls_pwm_atim_reg_to_ns(ls_pwm, ccr_reg);
 
-	ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
+	ccer_reg = readl(ls_pwm->mmio_base + ATIM_CCER);
 	state->polarity = (ccer_reg & CCER_CCnP(pwm->hwpwm)) ? PWM_POLARITY_INVERSED
 														 : PWM_POLARITY_NORMAL;
 	state->enabled = (ccer_reg & CCER_CCnE(pwm->hwpwm)) ? true : false;
@@ -237,22 +242,22 @@ void ls_pwm_gtim_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	}
 
 	ls_pwm->ccer_reg = ccer_reg;
-	ls_pwm->ccr_reg[pwm->hwpwm] = readl(ls_pwm->mmio_base + GTIM_CCR(pwm->hwpwm));
-	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
+	ls_pwm->ccr_reg[pwm->hwpwm % 4] = readl(ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
+	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + ATIM_ARR);
 }
 
-static const struct pwm_ops ls_pwm_gtim_ops = {
-	.config = ls_pwm_gtim_config,
-	.set_polarity = ls_pwm_gtim_set_polarity,
-	.enable = ls_pwm_gtim_enable,
-	.disable = ls_pwm_gtim_disable,
-	.get_state = ls_pwm_gtim_get_state,
+static const struct pwm_ops ls_pwm_atim_ops = {
+	.config = ls_pwm_atim_config,
+	.set_polarity = ls_pwm_atim_set_polarity,
+	.enable = ls_pwm_atim_enable,
+	.disable = ls_pwm_atim_disable,
+	.get_state = ls_pwm_atim_get_state,
 	.owner = THIS_MODULE,
 };
 
-static int ls_pwm_gtim_probe(struct platform_device *pdev)
+static int ls_pwm_atim_probe(struct platform_device *pdev)
 {
-	struct ls_pwm_gtim_chip *pwm;
+	struct ls_pwm_atim_chip *pwm;
 	struct resource *mem;
 	int err;
 	struct device_node *np = pdev->dev.of_node;
@@ -265,12 +270,12 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	pwm->en_mark = 0b0000;
+	pwm->en_mark = 0b00000000;
 
 	pwm->chip.dev = &pdev->dev;
-	pwm->chip.ops = &ls_pwm_gtim_ops;
+	pwm->chip.ops = &ls_pwm_atim_ops;
 	pwm->chip.base = -1;
-	pwm->chip.npwm = 4;
+	pwm->chip.npwm = 8;
 
 	if (!(of_property_read_u32(np, "clock-frequency", &clk)))
 		pwm->clock_frequency = clk;
@@ -299,16 +304,17 @@ static int ls_pwm_gtim_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	writel(EGR_UG, pwm->mmio_base + GTIM_EGR);
+	writel(EGR_UG, pwm->mmio_base + ATIM_EGR);
+	writel(BDTR_MOE, pwm->mmio_base + ATIM_BDTR);
 
 	platform_set_drvdata(pdev, pwm);
 	dev_dbg(&pdev->dev, "pwm probe successful\n");
 	return 0;
 }
 
-static int ls_pwm_gtim_remove(struct platform_device *pdev)
+static int ls_pwm_atim_remove(struct platform_device *pdev)
 {
-	struct ls_pwm_gtim_chip *pwm = platform_get_drvdata(pdev);
+	struct ls_pwm_atim_chip *pwm = platform_get_drvdata(pdev);
 	int err;
 	if (!pwm)
 		return -ENODEV;
@@ -320,58 +326,58 @@ static int ls_pwm_gtim_remove(struct platform_device *pdev)
 }
 
 #ifdef CONFIG_OF
-static struct of_device_id ls_pwm_gtim_id_table[] = {
-	{.compatible = "loongson,ls300-pwm-gtim"},
+static struct of_device_id ls_pwm_atim_id_table[] = {
+	{.compatible = "loongson,ls300-pwm-atim"},
 	{},
 };
-MODULE_DEVICE_TABLE(of, ls_pwm_gtim_id_table);
+MODULE_DEVICE_TABLE(of, ls_pwm_atim_id_table);
 #endif
 
 #ifdef CONFIG_PM_SLEEP
-static int ls_pwm_gtim_suspend(struct device *dev)
+static int ls_pwm_atim_suspend(struct device *dev)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = dev_get_drvdata(dev);
+	struct ls_pwm_atim_chip *ls_pwm = dev_get_drvdata(dev);
 
-	ls_pwm->ccer_reg = readl(ls_pwm->mmio_base + GTIM_CCER);
-	ls_pwm->ccr_reg[0] = readl(ls_pwm->mmio_base + GTIM_CCR(0));
-	ls_pwm->ccr_reg[1] = readl(ls_pwm->mmio_base + GTIM_CCR(1));
-	ls_pwm->ccr_reg[2] = readl(ls_pwm->mmio_base + GTIM_CCR(2));
-	ls_pwm->ccr_reg[3] = readl(ls_pwm->mmio_base + GTIM_CCR(3));
-	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + GTIM_ARR);
+	ls_pwm->ccer_reg = readl(ls_pwm->mmio_base + ATIM_CCER);
+	ls_pwm->ccr_reg[0] = readl(ls_pwm->mmio_base + ATIM_CCR(0));
+	ls_pwm->ccr_reg[1] = readl(ls_pwm->mmio_base + ATIM_CCR(1));
+	ls_pwm->ccr_reg[2] = readl(ls_pwm->mmio_base + ATIM_CCR(2));
+	ls_pwm->ccr_reg[3] = readl(ls_pwm->mmio_base + ATIM_CCR(3));
+	ls_pwm->arr_reg = readl(ls_pwm->mmio_base + ATIM_ARR);
 	return 0;
 }
 
-static int ls_pwm_gtim_resume(struct device *dev)
+static int ls_pwm_atim_resume(struct device *dev)
 {
-	struct ls_pwm_gtim_chip *ls_pwm = dev_get_drvdata(dev);
+	struct ls_pwm_atim_chip *ls_pwm = dev_get_drvdata(dev);
 
-	writel(ls_pwm->ccer_reg, ls_pwm->mmio_base + GTIM_CCER);
-	writel(ls_pwm->ccr_reg[0], ls_pwm->mmio_base + GTIM_CCR(0));
-	writel(ls_pwm->ccr_reg[1], ls_pwm->mmio_base + GTIM_CCR(1));
-	writel(ls_pwm->ccr_reg[2], ls_pwm->mmio_base + GTIM_CCR(2));
-	writel(ls_pwm->ccr_reg[3], ls_pwm->mmio_base + GTIM_CCR(3));
-	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + GTIM_ARR);
+	writel(ls_pwm->ccer_reg, ls_pwm->mmio_base + ATIM_CCER);
+	writel(ls_pwm->ccr_reg[0], ls_pwm->mmio_base + ATIM_CCR(0));
+	writel(ls_pwm->ccr_reg[1], ls_pwm->mmio_base + ATIM_CCR(1));
+	writel(ls_pwm->ccr_reg[2], ls_pwm->mmio_base + ATIM_CCR(2));
+	writel(ls_pwm->ccr_reg[3], ls_pwm->mmio_base + ATIM_CCR(3));
+	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + ATIM_ARR);
 	return 0;
 }
 #endif
 
-static SIMPLE_DEV_PM_OPS(ls_pwm_gtim_pm_ops, ls_pwm_gtim_suspend, ls_pwm_gtim_resume);
+static SIMPLE_DEV_PM_OPS(ls_pwm_atim_pm_ops, ls_pwm_atim_suspend, ls_pwm_atim_resume);
 
-static struct platform_driver ls_pwm_gtim_driver = {
+static struct platform_driver ls_pwm_atim_driver = {
 	.driver = {
-		.name = "ls-pwm-gtim",
+		.name = "ls-pwm-atim",
 		.owner = THIS_MODULE,
 		.bus = &platform_bus_type,
-		.pm = &ls_pwm_gtim_pm_ops,
+		.pm = &ls_pwm_atim_pm_ops,
 #ifdef CONFIG_OF
-		.of_match_table = of_match_ptr(ls_pwm_gtim_id_table),
+		.of_match_table = of_match_ptr(ls_pwm_atim_id_table),
 #endif
 	},
-	.probe = ls_pwm_gtim_probe,
-	.remove = ls_pwm_gtim_remove,
+	.probe = ls_pwm_atim_probe,
+	.remove = ls_pwm_atim_remove,
 };
-module_platform_driver(ls_pwm_gtim_driver);
+module_platform_driver(ls_pwm_atim_driver);
 
 MODULE_AUTHOR("Ilikara <3435193369@qq.com>");
-MODULE_DESCRIPTION("Loongson Gtimer Pwm Driver");
+MODULE_DESCRIPTION("Loongson Atimer Pwm Driver");
 MODULE_LICENSE("GPL");

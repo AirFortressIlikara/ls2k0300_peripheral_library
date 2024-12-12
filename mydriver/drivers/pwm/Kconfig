@@ -6,3 +6,12 @@ config PWM_LS_GTIM
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called pwm-ls-gtim.
+
+config PWM_LS_ATIM
+	tristate "Loongson ATIM PWM support"
+	depends on CPU_LOONGSON3 || CPU_LOONGSON2K || CPU_LOONGSON64
+	help
+	  ATIM PWM framework driver for loongson2k.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called pwm-ls-gtim.
