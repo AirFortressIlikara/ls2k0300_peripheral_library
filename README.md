@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-11 15:36:31
+ * @LastEditTime: 2024-12-12 06:43:04
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -22,17 +22,19 @@
 ## 这个仓库提供了什么
 
 测试过的功能
+- 基于ATIM控制器的PWM类
 - 基于GTIM控制器的PWM类
 - 基于GTIM控制器的PWM驱动
 - 基于PWM控制器的方向编码器类
 
 未测试的功能
-- 基于ATIM控制器的PWM类
+- 暂无
 
 开发中的功能
 - 总钻风驱动程序
 
 开发计划
+- 基于ATIM控制器的PWM驱动
 - 提供更多TIM驱动程序
 - 迁移到RUST
 - 更新LCD排线引脚复用信息

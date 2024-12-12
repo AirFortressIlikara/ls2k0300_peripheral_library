@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 04:25:47
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 13:24:34
+ * @LastEditTime: 2024-12-12 06:39:21
  * @FilePath: /ls2k0300_peripheral_library/lib/pwm_atim.h
  * @Description: 基于LS2K0300 ATIMER的PWM控制器类，可使用复用为TIM1_CHx的引脚，未测试
  *
@@ -50,7 +50,7 @@
 class PWM_ATIM
 {
 public:
-    PWM_ATIM(int gpio, int mux, int chNum_, int period_, int duty_cycle_);
+    PWM_ATIM(int gpio, int mux, int chNum_, int period_, int duty_cycle_, int NEG_);
     ~PWM_ATIM(void);
 
     void enable(void);
@@ -60,12 +60,13 @@ public:
     uint32_t period_10ns, duty_cycle_10ns;
 
 private:
-    uint32_t chNum;
+    uint32_t chNum, NEG;
     void *ccmr_buffer[2];
     void *ccer_buffer;
     void *period_buffer;
     void *duty_cycle_buffer;
     void *cnt_buffer;
+    void *bdtr_buffer;
 };
 
 #endif
