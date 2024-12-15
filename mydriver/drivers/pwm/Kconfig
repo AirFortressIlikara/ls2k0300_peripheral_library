@@ -14,4 +14,4 @@ config PWM_LS_ATIM
 	  ATIM PWM framework driver for loongson2k.
 
 	  To compile this driver as a module, choose M here: the module
-	  will be called pwm-ls-gtim.
+	  will be called pwm-ls-atim.
