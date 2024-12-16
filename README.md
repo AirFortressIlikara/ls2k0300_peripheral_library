@@ -17,6 +17,7 @@
 - [在设备树中加入SPI1的屏幕节点](https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142)
 - [救砖教程：局域网tftp加载内核开机](https://www.bilibili.com/video/BV1hvqJY3EWu/)
 - 久久派拓展板毛坯房 在OSHwhub未过审，请去qq群自行下载
+- [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)
 
 后续会有更多视频教程发布。
 
