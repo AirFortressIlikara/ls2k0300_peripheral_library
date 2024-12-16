@@ -112,6 +112,8 @@
 
 请勿继续使用0615，0627等过老的linux源码。
 
+**make menuconfig** 时 **Kernal Type->Built-In DTB** 请根据自己板卡的型号填写，例如久久派wifi版应选择 **loongson_2k0300_pai_99_wifi** 。
+
 这里假设你使用的是久久派wifi版，下面的路径为在linux源码目录下的相对路径
 >arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dts
 
