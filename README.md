@@ -123,7 +123,7 @@
 
 >arch/loongarch/boot/dts/loongson/2k0300-pinctrl.dtsi
 
-- 查询复用配置对应的引脚号和功能号
+- 查询复用配置对应的引脚号和功能号，例如 **<&gpa4 2 6>** 代表了4\*16+2到4\*16+6即GPIO66-70
 
 ## 2K0300 CoreMark 跑分
 
