@@ -16,7 +16,8 @@
 - [GTIM驱动编译与安装](https://www.bilibili.com/video/BV1Ddi2YmESo/)
 - [在设备树中加入SPI1的屏幕节点](https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142)
 - [救砖教程：局域网tftp加载内核开机](https://www.bilibili.com/video/BV1hvqJY3EWu/)
-- [久久派拓展板毛坯房](https://oshwhub.com/ilikara/jiu-jiu-pai-tuo-zhan-ban-ban-kuang)
+- 久久派拓展板毛坯房 在OSHwhub未过审，请去qq群自行下载
+- [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)
 
 后续会有更多视频教程发布。
 
@@ -110,6 +111,10 @@
 
 ## 设备树部分修改教程
 
+请勿继续使用0615，0627等过老的linux源码。
+
+**make menuconfig** 时 **Kernal Type->Built-In DTB** 请根据自己板卡的型号填写，例如久久派wifi版应选择 **loongson_2k0300_pai_99_wifi** 。
+
 这里假设你使用的是久久派wifi版，下面的路径为在linux源码目录下的相对路径
 >arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dts
 
@@ -118,7 +123,7 @@
 
 >arch/loongarch/boot/dts/loongson/2k0300-pinctrl.dtsi
 
-- 查询复用配置对应的引脚号和功能号
+- 查询复用配置对应的引脚号和功能号，例如 **<&gpa4 2 6>** 代表了4\*16+2到4\*16+6即GPIO66-70
 
 ## 2K0300 CoreMark 跑分
 
