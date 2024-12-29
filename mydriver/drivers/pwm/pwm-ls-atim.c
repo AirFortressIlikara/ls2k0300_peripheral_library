@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-02 07:23:11
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-12 09:11:50
+ * @LastEditTime: 2024-12-29 06:48:22
  * @FilePath: /ls2k0300_peripheral_library/mydriver/drivers/pwm/pwm-ls-atim.c
  * @Description:
  *
@@ -128,10 +128,15 @@ static int ls_pwm_atim_enable(struct pwm_chip *chip, struct pwm_device *pwm)
 {
 	struct ls_pwm_atim_chip *ls_pwm = to_ls_pwm_atim_chip(chip);
 	int ret;
-	u32 cr1_reg;
+	u32 cr1_reg, ccmr_reg;
 
 	writel(ls_pwm->ccr_reg[pwm->hwpwm % 4], ls_pwm->mmio_base + ATIM_CCR(pwm->hwpwm));
 	writel(ls_pwm->arr_reg, ls_pwm->mmio_base + ATIM_ARR);
+
+	// todo:类似config函数中的特殊处理
+	ccmr_reg = readl(ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
+	ccmr_reg |= 0b111 * CCMR_OCnM(pwm->hwpwm);
+	writel(ccmr_reg, ls_pwm->mmio_base + ATIM_CCMR(pwm->hwpwm));
 
 	ret = readl(ls_pwm->mmio_base + ATIM_CCER);
 	ret |= CCER_CCnE(pwm->hwpwm);
