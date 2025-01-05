@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-12 09:13:40
+ * @LastEditTime: 2025-01-05 15:41:45
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -13,11 +13,11 @@
 欢迎关注[我的bilibili个人主页](https://space.bilibili.com/317252912)
 - [交叉编译FFmpeg](https://www.bilibili.com/opus/1006195805380411430)
 - [交叉编译OpenCV](https://www.bilibili.com/video/BV1Q2zbYrEvS/)
-- [GTIM驱动编译与安装](https://www.bilibili.com/video/BV1Ddi2YmESo/)
+- [（已过时）GTIM驱动编译与安装](https://www.bilibili.com/video/BV1Ddi2YmESo/)
 - [在设备树中加入SPI1的屏幕节点](https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142)
 - [救砖教程：局域网tftp加载内核开机](https://www.bilibili.com/video/BV1hvqJY3EWu/)
 - 久久派拓展板毛坯房 在OSHwhub未过审，请去qq群自行下载
-- [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)
+- [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设
 
 后续会有更多视频教程发布。
 
