@@ -42,6 +42,13 @@
 
 本仓库持续更新中
 
+## 久久派点灯
+久久派上其中一个LED与CPU直连，可以点灯（雾）
+
+|引脚号|GPIO复用|主功能复用|第一复用|第二复用|
+|:---:|:---:|:---:|:---:|:---:|
+|S_LED|GPIO83|TIM1_CH3N|||
+
 ## 久久派引脚功能复用表
 久久派引出io的常用复用功能见下表，不常用功能未列举，请自行查询手册。
 
@@ -152,4 +159,29 @@ seedcrc          : 0xe9f5
 [0]crcfinal      : 0xbd59
 Correct operation validated. See README.md for run and reporting rules.
 CoreMark 1.0 : 3639.010189 / GCC8.3.0 -O2   -lrt / Heap
+```
+
+## 2K0300 p7zip 跑分
+
+运行结果
+```
+7-Zip (a) 17.05 : Copyright (c) 1999-2021 Igor Pavlov : 2017-08-28
+p7zip Version 17.05 (locale=en_US.utf8,Utf16=on,HugeFiles=on,64 bits,1 CPU LE)
+
+LE
+CPU Freq: 64000000 - - - - - - - -
+
+RAM size:     378 MB,  # CPU hardware threads:   1
+RAM usage:    219 MB,  # Benchmark threads:      1
+
+                       Compressing  |                  Decompressing
+Dict     Speed Usage    R/U Rating  |      Speed Usage    R/U Rating
+         KiB/s     %   MIPS   MIPS  |      KiB/s     %   MIPS   MIPS
+
+22:        537    96    545    523  |       9564    97    843    817
+23:        519    97    546    529  |       9441    97    842    817
+24:        504    97    559    543  |       9350    98    841    821
+----------------------------------  | ------------------------------
+Avr:              97    550    532  |               97    842    818
+Tot:              97    696    675
 ```
