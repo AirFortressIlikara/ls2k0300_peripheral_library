@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-01-17 18:33:27
+ * @LastEditTime: 2025-01-17 19:16:39
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -54,23 +54,23 @@
 
 在pwm_gtim中有mux参数，GPIO复用为0b00，第一复用为0b01，第二复用为0b10，主功能复用为0b11。若需要在基于2K0300的其他产品中使用该库，请查询数据手册的完整复用表。
 
-| 引脚号 | GPIO复用 | 主功能复用 |  第一复用   |   第二复用   | 引脚号 | GPIO复用 | 主功能复用 |    第一复用    |  第二复用   |
-| :----: | :------: | :--------: | :---------: | :----------: | :----: | :------: | :--------: | :------------: | :---------: |
-|   1    |    -     |    GND     |      -      |      -       |   2    |    -     |    P3V3    |       -        |      -      |
-|   3    |  GPIO88  |  tim2_ch2  | sdio1_d[6]  |    pwm[2]    |   4    |  GPIO41  |  uart0_tx  | gmac0_ptp_pps  | lio_data[1] |
-|   5    |  GPIO89  |  tim2_ch3  | sdio1_d[7]  |    pwm[3]    |   6    |  GPIO40  |  uart0_rx  | gmac0_ptp_trig | lio_data[0] |
-|   7    |  GPIO73  | can_tx[2]  | sdio1_d[5]  |  gmac0_crs   |   8    |  GPIO43  |  uart1_tx  | gmac1_ptp_pps  | lio_data[3] |
-|   9    |  GPIO72  | can_rx[2]  | sdio1_d[4]  |  gmac0_col   |   10   |  GPIO42  |  uart1_rx  | gmac1_ptp_trig | lio_data[2] |
-|   11   |  GPIO75  | can_tx[3]  | sdio1_d[7]  |  gmac1_crs   |   12   |  GPIO45  |  uart2_rx  |  gmac1_rx[0]   | lio_data[5] |
-|   13   |  GPIO74  | can_rx[3]  | sdio1_d[6]  |  gmac1_col   |   14   |  GPIO44  |  uart2_tx  |  gmac1_rx_ctl  | lio_data[4] |
-|   15   |  GPIO50  | i2c_scl[1] | gmac1_tx[0] | lio_data[10] |   16   |  GPIO48  | i2c_scl[0] |  gmac1_rx[3]   | lio_data[8] |
-|   17   |  GPIO51  | i2c_sda[1] | gmac1_tx[1] | lio_data[11] |   18   |  GPIO49  | i2c_sda[0] |  gmac1_tx_ctl  | lio_data[9] |
-|   19   |    -     |    GND     |      -      |      -       |   20   |    -     |    GND     |       -        |      -      |
-|   21   |  GPIO64  |  spi2_clk  |   pwm[0]    |  uart0_dcd   |   22   |  GPIO60  |  spi1_clk  |   i2c_scl[0]   |  uart0_rts  |
-|   23   |  GPIO67  |  spi2_cs   |   pwm[3]    |  uart1_cts   |   24   |  GPIO63  |  spi1_cs   |   i2c_sda[1]   |  uart0_dtr  |
-|   25   |  GPIO65  | spi2_miso  |   pwm[1]    |   uart0_ri   |   26   |  GPIO61  | spi1_miso  |   i2c_sda[0]   |  uart0_cts  |
-|   27   |  GPIO66  | spi2_mosi  |   pwm[2]    |  uart1_rts   |   28   |  GPIO62  | spi1_mosi  |   i2c_scl[1]   |  uart0_dsr  |
-|   29   |    -     |    GND     |      -      |      -       |   30   |    -     |    P5V     |       -        |      -      |
+| 引脚号 | GPIO复用 | 主功能复用 |  第一复用   |       第二复用       | 引脚号 | GPIO复用 | 主功能复用 |    第一复用    |       第二复用       |
+| :----: | :------: | :--------: | :---------: | :------------------: | :----: | :------: | :--------: | :------------: | :------------------: |
+|   1    |    -     |    GND     |      -      |          -           |   2    |    -     |    P3V3    |       -        |          -           |
+|   3    |  GPIO88  |  tim2_ch2  | sdio1_d[6]  |        pwm[2]        |   4    |  GPIO41  |  uart0_tx  | gmac0_ptp_pps  |     lio_data[1]      |
+|   5    |  GPIO89  |  tim2_ch3  | sdio1_d[7]  |        pwm[3]        |   6    |  GPIO40  |  uart0_rx  | gmac0_ptp_trig |     lio_data[0]      |
+|   7    |  GPIO73  | can_tx[2]  | sdio1_d[5]  |      gmac0_crs       |   8    |  GPIO43  |  uart1_tx  | gmac1_ptp_pps  |     lio_data[3]      |
+|   9    |  GPIO72  | can_rx[2]  | sdio1_d[4]  |      gmac0_col       |   10   |  GPIO42  |  uart1_rx  | gmac1_ptp_trig |     lio_data[2]      |
+|   11   |  GPIO75  | can_tx[3]  | sdio1_d[7]  |      gmac1_crs       |   12   |  GPIO45  |  uart2_rx  |  gmac1_rx[0]   |     lio_data[5]      |
+|   13   |  GPIO74  | can_rx[3]  | sdio1_d[6]  |      gmac1_col       |   14   |  GPIO44  |  uart2_tx  |  gmac1_rx_ctl  |     lio_data[4]      |
+|   15   |  GPIO50  | i2c_scl[1] | gmac1_tx[0] |     lio_data[10]     |   16   |  GPIO48  | i2c_scl[0] |  gmac1_rx[3]   |     lio_data[8]      |
+|   17   |  GPIO51  | i2c_sda[1] | gmac1_tx[1] |     lio_data[11]     |   18   |  GPIO49  | i2c_sda[0] |  gmac1_tx_ctl  |     lio_data[9]      |
+|   19   |    -     |    GND     |      -      |          -           |   20   |    -     |    GND     |       -        |          -           |
+|   21   |  GPIO64  |  spi2_clk  |   pwm[0]    | uart0_dcd / uart5_rx |   22   |  GPIO60  |  spi1_clk  |   i2c_scl[0]   | uart0_rts / uart6_tx |
+|   23   |  GPIO67  |  spi2_cs   |   pwm[3]    | uart1_cts / uart9_rx |   24   |  GPIO63  |  spi1_cs   |   i2c_sda[1]   | uart0_dtr / uart4_tx |
+|   25   |  GPIO65  | spi2_miso  |   pwm[1]    | uart0_ri / uart5_tx  |   26   |  GPIO61  | spi1_miso  |   i2c_sda[0]   | uart0_cts / uart6_rx |
+|   27   |  GPIO66  | spi2_mosi  |   pwm[2]    | uart1_rts / uart9_tx |   28   |  GPIO62  | spi1_mosi  |   i2c_scl[1]   | uart0_dsr / uart4_rx |
+|   29   |    -     |    GND     |      -      |          -           |   30   |    -     |    P5V     |       -        |          -           |
 
 **注意**
 - 16、18号引脚与LCD屏幕的触控共用，不建议使用
