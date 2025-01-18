@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-01-17 21:03:40
+ * @LastEditTime: 2025-01-18 19:37:15
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -47,6 +47,7 @@
 - [久久派](https://github.com/AirFortressIlikara/ls2k0300_peripheral_library/blob/main/%E4%B9%85%E4%B9%85%E6%B4%BE%E5%BC%95%E8%84%9A%E5%8A%9F%E8%83%BD%E5%A4%8D%E7%94%A8%E8%A1%A8.md)
 - [蜂鸟派](https://github.com/AirFortressIlikara/ls2k0300_peripheral_library/blob/main/%E8%9C%82%E9%B8%9F%E6%B4%BE%E5%BC%95%E8%84%9A%E5%8A%9F%E8%83%BD%E5%A4%8D%E7%94%A8%E8%A1%A8.md)
 - [先锋派](https://github.com/AirFortressIlikara/ls2k0300_peripheral_library/blob/main/%E5%85%88%E9%94%8B%E6%B4%BE%E5%BC%95%E8%84%9A%E5%8A%9F%E8%83%BD%E5%A4%8D%E7%94%A8%E8%A1%A8.md)
+- [米联派](https://github.com/AirFortressIlikara/ls2k0300_peripheral_library/blob/main/%E7%B1%B3%E8%81%94%E6%B4%BE%E5%BC%95%E8%84%9A%E5%8A%9F%E8%83%BD%E5%A4%8D%E7%94%A8%E8%A1%A8.md)
 
 ## 设备树部分修改教程
 
