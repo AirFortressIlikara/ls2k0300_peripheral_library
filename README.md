@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-01-18 19:37:15
+ * @LastEditTime: 2025-01-18 19:45:20
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -14,10 +14,19 @@
 - [交叉编译FFmpeg](https://www.bilibili.com/opus/1006195805380411430)
 - [交叉编译OpenCV](https://www.bilibili.com/video/BV1Q2zbYrEvS/)
 - [（已过时）GTIM驱动编译与安装](https://www.bilibili.com/video/BV1Ddi2YmESo/)
-- [在设备树中加入SPI1的屏幕节点](https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142)
+  - 已在[久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)预装
+- [（已过时）在设备树中加入SPI1的屏幕节点](https://bbs.ctcisz.com/forum.php?mod=viewthread&tid=142)
+  - 已在[久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)预装
 - [救砖教程：局域网tftp加载内核开机](https://www.bilibili.com/video/BV1hvqJY3EWu/)
 - 久久派拓展板毛坯房 在OSHwhub未过审，请去qq群自行下载
 - [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设
+    ```
+    git clone https://github.com/AirFortressIlikara/LS2K0300-linux-4.19
+    cd LS2K0300-linux-4.19
+    cp ./arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dts .config
+    vim cmd.sh #这一步要修改cmd.sh
+    ./cmd.sh
+    ```
 
 后续会有更多视频教程发布。
 
@@ -113,8 +122,8 @@ Dict     Speed Usage    R/U Rating  |      Speed Usage    R/U Rating
 
 22:        537    96    545    523  |       9564    97    843    817
 23:        519    97    546    529  |       9441    97    842    817
-24:        504    97    559    543  |       9350    98    841    821
-----------------------------------  | ------------------------------
-Avr:              97    550    532  |               97    842    818
+| 24:        504    97    559    543 | 9350    98    841    821 |
+| ---------------------------------- | ------------------------ |
+| Avr:              97    550    532 | 97    842    818         |
 Tot:              97    696    675
 ```
