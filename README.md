@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-01-18 19:53:03
+ * @LastEditTime: 2025-01-18 20:00:00
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -29,6 +29,8 @@
     ```
 
 后续会有更多视频教程发布。
+
+- OpenCV测试用例：[Bad Apple!!](https://archive.org/details/bad-apple-resources)
 
 ## 这个仓库提供了什么
 
