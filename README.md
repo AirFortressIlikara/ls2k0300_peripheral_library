@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-01-18 19:45:20
+ * @LastEditTime: 2025-01-18 19:53:03
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -23,7 +23,7 @@
     ```
     git clone https://github.com/AirFortressIlikara/LS2K0300-linux-4.19
     cd LS2K0300-linux-4.19
-    cp ./arch/loongarch/boot/dts/loongson/loongson_2k0300_pai_99_wifi.dts .config
+    cp ./arch/loongarch/configs/loongson_2k0300_99pi_wifi_defconfig .config
     vim cmd.sh #这一步要修改cmd.sh
     ./cmd.sh
     ```
