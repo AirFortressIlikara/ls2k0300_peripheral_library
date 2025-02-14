@@ -2,7 +2,7 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
  * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:55:55
+ * @LastEditTime: 2025-02-14 13:46:55
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -40,6 +40,7 @@
     vim cmd.sh #这一步要修改cmd.sh
     ./cmd.sh
     ```
+- [久久派新世界Linux 6.9-rc7源码](https://github.com/AirFortressIlikara/LS2K0300-Linux/tree/v6.9-2k0300) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设，可以尝鲜。
 
 后续会有更多视频教程发布。
 
