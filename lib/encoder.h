@@ -1,12 +1,25 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-10-11 06:20:04
- * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2024-12-01 04:42:58
+ * @LastEditors: Ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-02-14 09:55:03
  * @FilePath: /ls2k0300_peripheral_library/lib/encoder.h
  * @Description: 基于PWM控制器实现的方向编码器类
  *
- * Copyright (c) 2024 by ilikara 3435193369@qq.com, All Rights Reserved.
+ * Copyright (c) 2024 by ilikara 3435193369@qq.com
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 #ifndef ENCODER_H
 #define ENCODER_H
