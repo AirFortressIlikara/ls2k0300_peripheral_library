@@ -1,8 +1,8 @@
 <!--
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 12:24:30
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 13:46:55
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-02-23 08:50:16
  * @FilePath: /ls2k0300_peripheral_library/README.md
  * @Description: github README
  * 
@@ -32,7 +32,7 @@
   - 已在[久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19)预装
 - [救砖教程：局域网tftp加载内核开机](https://www.bilibili.com/video/BV1hvqJY3EWu/)
 - 久久派拓展板毛坯房 在OSHwhub未过审，请去qq群自行下载
-- [久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设
+- [（停止更新）久久派旧世界Linux 4.19源码](https://github.com/AirFortressIlikara/LS2K0300-linux-4.19) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设
     ```
     git clone https://github.com/AirFortressIlikara/LS2K0300-linux-4.19
     cd LS2K0300-linux-4.19
@@ -40,8 +40,8 @@
     vim cmd.sh #这一步要修改cmd.sh
     ./cmd.sh
     ```
-- [久久派新世界Linux 6.9-rc7源码](https://github.com/AirFortressIlikara/LS2K0300-Linux/tree/v6.9-2k0300) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设，可以尝鲜。
-
+- [（停止更新）久久派新世界Linux 6.9-rc7源码](https://github.com/AirFortressIlikara/LS2K0300-Linux/tree/v6.9-2k0300) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设，可以尝鲜。
+- [久久派新世界Linux 6.12源码](https://gitee.com/Ilikara/linux-6.12) 该部分为我对目前久久派龙芯内核的fork，后续的更新都会在这里。
 后续会有更多视频教程发布。
 
 - OpenCV测试用例：[Bad Apple!!](https://archive.org/details/bad-apple-resources)
