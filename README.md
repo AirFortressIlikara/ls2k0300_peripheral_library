@@ -43,7 +43,7 @@
 - [（停止更新）久久派新世界Linux 6.9-rc7源码](https://github.com/AirFortressIlikara/LS2K0300-Linux/tree/v6.9-2k0300) 该部分已经集成了我的ATIM GTIM驱动，并提供了久久派的智能车defconfig预设，可以尝鲜。
 - [久久派新世界Linux 6.12源码](https://gitee.com/Ilikara/linux-6.12) 该部分为我对目前2K0300龙芯内核的fork，后续的更新都会在这里。
   - [广东龙芯2K0300先锋派&蜂鸟板源码编译操作指南-v2.0](https://gitee.com/open-loongarch/docs-2k0300/blob/master/%E9%BE%99%E8%8A%AF2K0300%E5%85%88%E9%94%8B%E6%B4%BE&%E8%9C%82%E9%B8%9F%E6%9D%BF%E6%BA%90%E7%A0%81%E7%BC%96%E8%AF%91%E6%93%8D%E4%BD%9C%E6%8C%87%E5%8D%97-v2.0.md)
-  - 使用时应切换到`feat/99pai`分支
+  - 久久派使用时应切换到`feat/99pai`分支
   - 使用`/home/ilikara/loongson/linux-6.12/arch/loongarch/configs/loongson_2k300_99pai_defconfig`
 
 后续会有更多视频教程发布。
