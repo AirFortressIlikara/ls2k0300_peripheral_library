@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 04:25:47
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:54:55
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:28:32
  * @FilePath: /ls2k0300_peripheral_library/lib/pwm_atim.h
  * @Description: 基于LS2K0300 ATIMER的PWM控制器类，可使用复用为TIM1_CHx的引脚，未测试
  *
@@ -24,18 +24,12 @@
 #ifndef PWM_ATIM_H_
 #define PWM_ATIM_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <string.h>
-
-#include "register.h"
+#include <sys/types.h>
+#include <unistd.h>
 
 #define GPIO_MUX_BASE_ADDR 0x16000490
 
@@ -60,8 +54,7 @@
 #define ATIM_BDTR_OFFSET 0x44
 #define ATIM_INSTA_OFFSET 0x50
 
-class PWM_ATIM
-{
+class PWM_ATIM {
 public:
     PWM_ATIM(int gpio, int mux, int chNum_, int period_, int duty_cycle_, int NEG_);
     ~PWM_ATIM(void);
@@ -74,12 +67,12 @@ public:
 
 private:
     uint32_t chNum, NEG;
-    void *ccmr_buffer[2];
-    void *ccer_buffer;
-    void *period_buffer;
-    void *duty_cycle_buffer;
-    void *cnt_buffer;
-    void *bdtr_buffer;
+    void* ccmr_buffer[2];
+    void* ccer_buffer;
+    void* period_buffer;
+    void* duty_cycle_buffer;
+    void* cnt_buffer;
+    void* bdtr_buffer;
 };
 
 #endif

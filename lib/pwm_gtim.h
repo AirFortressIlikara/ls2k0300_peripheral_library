@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 08:14:34
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:54:52
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:28:28
  * @FilePath: /ls2k0300_peripheral_library/lib/pwm_gtim.h
  * @Description: 基于LS2K0300 GTIMER的PWM控制器类，可使用复用为TIM2_CHx的引脚
  *
@@ -24,18 +24,12 @@
 #ifndef PWM_GTIM_H_
 #define PWM_GTIM_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <string.h>
-
-#include "register.h"
+#include <sys/types.h>
+#include <unistd.h>
 
 #define GPIO_MUX_BASE_ADDR 0x16000490
 
@@ -58,8 +52,7 @@
 #define GTIM_CCR4_OFFSET 0x40
 #define GTIM_INSTA_OFFSET 0x50
 
-class PWM_GTIM
-{
+class PWM_GTIM {
 public:
     PWM_GTIM(int gpio, int mux, int chNum_, int period_, int duty_cycle_);
     ~PWM_GTIM(void);
@@ -72,11 +65,11 @@ public:
 
 private:
     uint32_t chNum;
-    void *ccmr_buffer[2];
-    void *ccer_buffer;
-    void *period_buffer;
-    void *duty_cycle_buffer;
-    void *cnt_buffer;
+    void* ccmr_buffer[2];
+    void* ccer_buffer;
+    void* period_buffer;
+    void* duty_cycle_buffer;
+    void* cnt_buffer;
 };
 
 #endif

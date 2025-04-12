@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-10-11 06:19:57
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:53:52
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:27:20
  * @FilePath: /ls2k0300_peripheral_library/src/encoder.cpp
  * @Description: 基于PWM控制器实现的方向编码器
  *
@@ -23,8 +23,14 @@
  */
 #include "encoder.h"
 
+#include <stdio.h>
+
+#include "register.h"
+
 // pwmNum为STEP引脚连接的PWM通道编号，gpioNum为DIR引脚所接的GPIO编号
-ENCODER::ENCODER(int pwmNum, int gpioNum) : base_addr(PWM_BASE_ADDR + pwmNum * PWM_OFFSET), directionGPIO(gpioNum)
+ENCODER::ENCODER(int pwmNum, int gpioNum)
+    : base_addr(PWM_BASE_ADDR + pwmNum * PWM_OFFSET)
+    , directionGPIO(gpioNum)
 {
     directionGPIO.setDirection("in");
 
@@ -58,14 +64,6 @@ void ENCODER::PWM_Init(void)
     REG_WRITE(control_buffer, control_reg);
 
     printf("PWM initialized with control register: 0x%08X\n", control_reg);
-}
-
-// 清空计数器
-void ENCODER::reset_counter(void)
-{
-    uint32_t control_reg = REG_READ(control_buffer);
-    control_reg |= COUNTER_RESET_BIT;
-    REG_WRITE(control_buffer, control_reg);
 }
 
 // 返回编码器的RPS

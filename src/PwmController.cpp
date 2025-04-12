@@ -2,14 +2,18 @@
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-09-17 08:21:50
  * @LastEditors: ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-23 09:08:25
+ * @LastEditTime: 2025-04-12 09:23:23
  * @FilePath: /ls2k0300_peripheral_library/src/PwmController.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #include "PwmController.h"
 
+#include <fstream>
+#include <iostream>
+
 PwmController::PwmController(int pwmchip, int pwmnum)
-    : pwmchip(pwmchip), pwmnum(pwmnum)
+    : pwmchip(pwmchip)
+    , pwmnum(pwmnum)
 {
     pwmPath = "/sys/class/pwm/pwmchip" + std::to_string(pwmchip) + "/pwm" + std::to_string(pwmnum) + "/";
 }
@@ -63,11 +67,10 @@ bool PwmController::setDutyCycle(unsigned int duty_cycle_ns)
 }
 
 // 向文件写入值的辅助函数
-bool PwmController::writeToFile(const std::string &path, const std::string &value)
+bool PwmController::writeToFile(const std::string& path, const std::string& value)
 {
     std::ofstream file(path);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         std::cerr << "Error opening file: " << path << std::endl;
         return false;
     }

@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 09:06:41
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:54:23
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:27:42
  * @FilePath: /ls2k0300_peripheral_library/src/main.cpp
  * @Description: 测试用主程序
  *
@@ -21,20 +21,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-#include "pwm_gtim.h"
-#include "pwm_atim.h"
-#include "encoder.h"
 #include <iostream>
+
+// #include "pwm_gtim.h"
+#include "pwm_atim.h"
+// #include "encoder.h"
+
 int main()
 {
     // ENCODER encoder(0, 67);
-    int gpio, ch, per, duty;
+    // int gpio, ch;
+    int per, duty;
     // std::cin >> gpio >> ch >> per >> duty;
     // PWM_ATIM test(gpio, 0b11, ch, per, duty);
     PWM_ATIM test(86, 0b11, 3, 200000, 50000, 1);
     test.enable();
-    for (int i = 0; i < 100; ++i)
-    {
+    for (int i = 0; i < 100; ++i) {
         // std::cout << encoder.pulse_counter_update() << std::endl;
         // usleep(5000);
         std::cin >> per >> duty;

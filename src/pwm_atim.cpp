@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-11-30 04:18:01
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:54:27
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:26:22
  * @FilePath: /ls2k0300_peripheral_library/src/pwm_atim.cpp
  * @Description: 基于LS2K0300 ATIMER的PWM控制器类，可使用复用为TIM1_CHx及TIM1_CHxN的引脚
  *
@@ -23,11 +23,18 @@
  */
 #include "pwm_atim.h"
 
+#include <stdio.h>
+
+#include "register.h"
+
 PWM_ATIM::PWM_ATIM(int gpio, int mux, int chNum_, int period_10ns_, int duty_cycle_10ns_, int NEG_ = 0)
-    : period_10ns(period_10ns_), duty_cycle_10ns(duty_cycle_10ns_), chNum(chNum_ - 1), NEG(NEG_)
+    : period_10ns(period_10ns_)
+    , duty_cycle_10ns(duty_cycle_10ns_)
+    , chNum(chNum_ - 1)
+    , NEG(NEG_)
 {
     { // 配置功能复用
-        void *gpio_mux_buffer = map_register(GPIO_MUX_BASE_ADDR + (gpio / 16) * 0x04, PAGE_SIZE);
+        void* gpio_mux_buffer = map_register(GPIO_MUX_BASE_ADDR + (gpio / 16) * 0x04, PAGE_SIZE);
         REG_WRITE(gpio_mux_buffer, REG_READ(gpio_mux_buffer) | (mux << (gpio % 16 * 2)));
     }
 

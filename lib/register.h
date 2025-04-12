@@ -1,8 +1,8 @@
 /*
  * @Author: ilikara 3435193369@qq.com
  * @Date: 2024-12-01 03:56:32
- * @LastEditors: Ilikara 3435193369@qq.com
- * @LastEditTime: 2025-02-14 09:54:47
+ * @LastEditors: ilikara 3435193369@qq.com
+ * @LastEditTime: 2025-04-12 09:23:54
  * @FilePath: /ls2k0300_peripheral_library/lib/register.h
  * @Description: 寄存器操作
  *
@@ -24,22 +24,21 @@
 #ifndef REGISTER_H
 #define REGISTER_H
 
+#include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define PAGE_SIZE 0x10000
 
-#define REG_READ(addr) (*(volatile uint32_t *)(addr))
-#define REG_WRITE(addr, val) (*(volatile uint32_t *)(addr) = (val))
+#define REG_READ(addr) (*(volatile uint32_t*)(addr))
+#define REG_WRITE(addr, val) (*(volatile uint32_t*)(addr) = (val))
 
-void *map_register(uint32_t physical_address, size_t size);
+void* map_register(uint32_t physical_address, size_t size);
 
 #endif

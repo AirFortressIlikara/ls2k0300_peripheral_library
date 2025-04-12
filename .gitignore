@@ -35,3 +35,6 @@ ref/
 *.exe
 *.out
 *.app
+
+.cache
+out
